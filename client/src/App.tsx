@@ -64,7 +64,7 @@ function Router() {
         {() => <PublicRoute component={Landing} />}
       </Route>
       <Route path="/register">
-        {() => <PublicRoute component={Register} />}
+        {() => <Register />}
       </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}

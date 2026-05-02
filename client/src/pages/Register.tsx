@@ -185,7 +185,7 @@ export default function Register() {
               </label>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-create-account">
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Select Plan"}
             </Button>
             <div className="text-center pt-1">
               <span className="text-xs text-muted-foreground">Already have an account? </span>

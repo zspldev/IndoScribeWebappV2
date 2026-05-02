@@ -80,6 +80,7 @@ export default function SelectPlan() {
     .sort((a, b) => parseFloat(a.monthlyPrice) - parseFloat(b.monthlyPrice));
 
   const currentPlan = plans.find(p => p.id === user?.planId);
+  const starterPlan = plans.find(p => parseFloat(p.monthlyPrice) === 0);
 
   const mutation = useMutation({
     mutationFn: async (planId: number) => {
@@ -94,8 +95,9 @@ export default function SelectPlan() {
   });
 
   const handleContinue = () => {
-    if (selectedPlanId !== null) {
-      mutation.mutate(selectedPlanId);
+    const planToAssign = selectedPlanId ?? starterPlan?.id ?? null;
+    if (planToAssign !== null) {
+      mutation.mutate(planToAssign);
     } else {
       setLocation("/dashboard");
     }
@@ -345,19 +347,19 @@ export default function SelectPlan() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  {selectedPlanId ? "Continue to Dashboard" : "Skip for now"}
+                  {selectedPlanId ? "Continue to Dashboard" : "Start with Free Plan"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
-            {selectedPlanId && (
+            {selectedPlanId && selectedPlanId !== starterPlan?.id && (
               <div>
                 <button
-                  onClick={() => setLocation("/dashboard")}
+                  onClick={() => starterPlan ? mutation.mutate(starterPlan.id) : setLocation("/dashboard")}
                   className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
                   data-testid="link-skip-plan"
                 >
-                  Skip — I'll choose a plan later
+                  Skip — start with the free Starter plan
                 </button>
               </div>
             )}
