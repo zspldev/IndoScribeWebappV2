@@ -1569,7 +1569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!plan || !plan.isActive) {
         return res.status(404).json({ error: "Plan not found or inactive" });
       }
-      await storage.updateUser(userId, { planId });
+      await storage.updateUserPlan(userId, planId);
       res.json({ success: true, planId });
     } catch (error) {
       console.error("Error updating user plan:", error);
