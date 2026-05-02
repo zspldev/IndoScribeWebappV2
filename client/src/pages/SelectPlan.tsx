@@ -14,7 +14,6 @@ import {
   ArrowRight,
   Star,
   Loader2,
-  Minus,
 } from "lucide-react";
 import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
 import HowItWorks from "@/components/HowItWorks";
@@ -31,18 +30,16 @@ interface Plan {
   features: string[];
 }
 
-const FEATURE_LABELS: Record<string, { label: string; group: string }> = {
-  live_recording:     { label: "Live Recording",               group: "Input" },
-  audio_upload:       { label: "Audio File Upload",            group: "Input" },
-  rich_text_editor:   { label: "Rich Text Editor",             group: "Editor" },
-  formatting_commands:{ label: "Voice Formatting Commands",    group: "Editor" },
-  translation:        { label: "Translation",                  group: "Editor" },
-  project_history:    { label: "Project History",              group: "Editor" },
-  docx_no_watermark:  { label: "DOCX Export (no watermark)",   group: "Export" },
-  pdf_no_watermark:   { label: "PDF Export (no watermark)",    group: "Export" },
+const FEATURE_LABELS: Record<string, string> = {
+  live_recording:      "Live Recording",
+  audio_upload:        "Audio File Upload",
+  rich_text_editor:    "Rich Text Editor",
+  formatting_commands: "Voice Formatting Commands",
+  translation:         "Translation",
+  project_history:     "Project History",
+  docx_no_watermark:   "DOCX Export (no watermark)",
+  pdf_no_watermark:    "PDF Export (no watermark)",
 };
-
-const COMPARISON_FEATURES = Object.keys(FEATURE_LABELS);
 
 const PLAN_HIGHLIGHT: Record<string, boolean> = { Pro: true };
 const PLAN_BADGE: Record<string, string> = { Pro: "Most Popular" };
@@ -61,6 +58,10 @@ function annualSavingsLabel(plan: Plan): string | null {
   if (monthly === 0 || annual === 0) return null;
   const savings = Math.round(((monthly * 12 - annual) / (monthly * 12)) * 100);
   return savings > 0 ? `Save ${savings}%` : null;
+}
+
+function featureLabel(key: string): string {
+  return FEATURE_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export default function SelectPlan() {
@@ -107,7 +108,11 @@ export default function SelectPlan() {
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-select-plan">
       {/* Nav */}
       <nav className="h-14 border-b flex items-center px-6 gap-4 bg-card">
-        <button onClick={() => setLocation(isUpgradeMode ? "/dashboard" : "/")} className="flex items-center gap-2" data-testid="link-logo">
+        <button
+          onClick={() => setLocation(isUpgradeMode ? "/dashboard" : "/")}
+          className="flex items-center gap-2"
+          data-testid="link-logo"
+        >
           <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
         </button>
         <div className="flex-1" />
@@ -153,25 +158,38 @@ export default function SelectPlan() {
           </div>
 
           {/* Billing toggle */}
-          <div className="flex items-center justify-center gap-3 mb-8" data-testid="billing-toggle">
-            <span className={`text-sm font-medium transition-colors ${billing === "monthly" ? "text-foreground" : "text-muted-foreground"}`}>
-              Monthly
-            </span>
-            <button
-              onClick={() => setBilling(b => b === "monthly" ? "annual" : "monthly")}
-              data-testid="toggle-billing"
-              className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${billing === "annual" ? "bg-primary" : "bg-input"}`}
-            >
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${billing === "annual" ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className={`text-sm font-medium transition-colors ${billing === "annual" ? "text-foreground" : "text-muted-foreground"}`}>
-              Annual
-            </span>
-            {billing === "annual" && (
-              <Badge variant="secondary" className="bg-sidebar-primary/15 text-sidebar-primary border-0 text-xs font-semibold">
-                Save up to 17%
-              </Badge>
-            )}
+          <div className="flex flex-col items-center gap-2 mb-8">
+            <div className="flex items-center gap-3" data-testid="billing-toggle">
+              <span
+                className={`text-sm font-medium transition-colors ${billing === "monthly" ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                Monthly
+              </span>
+              <button
+                onClick={() => setBilling(b => b === "monthly" ? "annual" : "monthly")}
+                data-testid="toggle-billing"
+                className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${billing === "annual" ? "bg-primary" : "bg-input"}`}
+              >
+                <span
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${billing === "annual" ? "translate-x-6" : "translate-x-1"}`}
+                />
+              </button>
+              <span
+                className={`text-sm font-medium transition-colors ${billing === "annual" ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                Annual
+              </span>
+            </div>
+            <div className="h-5 flex items-center">
+              {billing === "annual" && (
+                <Badge
+                  variant="secondary"
+                  className="bg-sidebar-primary/15 text-sidebar-primary border-0 text-xs font-semibold"
+                >
+                  Save up to 17%
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Plan cards */}
@@ -186,9 +204,9 @@ export default function SelectPlan() {
                 const isCurrent = isUpgradeMode && currentPlan?.id === plan.id;
                 const highlight = !!PLAN_HIGHLIGHT[plan.planName];
                 const badge = PLAN_BADGE[plan.planName];
-                const price = formatPrice(plan, billing);
-                const savings = annualSavingsLabel(plan);
                 const isFree = parseFloat(plan.monthlyPrice) === 0;
+                const savings = annualSavingsLabel(plan);
+                const planFeatures: string[] = Array.isArray(plan.features) ? plan.features : [];
 
                 return (
                   <div
@@ -205,34 +223,30 @@ export default function SelectPlan() {
                         : "border-border bg-card cursor-pointer hover:border-primary/50"
                     }`}
                   >
-                    {/* Badge */}
-                    {(badge || isCurrent) && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                        {isCurrent ? (
-                          <span className="inline-flex items-center bg-muted text-muted-foreground text-[11px] font-semibold px-3 py-1 rounded-full border border-border">
-                            Current Plan
-                          </span>
-                        ) : badge ? (
-                          <span className="inline-flex items-center gap-1 bg-sidebar-primary text-sidebar-primary-foreground text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
-                            <Star className="w-3 h-3 fill-current" />
-                            {badge}
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
+                    {/* Top badge row — Most Popular / Current Plan / Selected checkmark */}
+                    <div className="absolute -top-3.5 left-0 right-0 flex justify-center z-10">
+                      {isCurrent ? (
+                        <span className="inline-flex items-center bg-muted text-muted-foreground text-[11px] font-semibold px-3 py-1 rounded-full border border-border">
+                          Current Plan
+                        </span>
+                      ) : isSelected ? (
+                        <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                          <Check className="w-3 h-3" />
+                          Selected
+                        </span>
+                      ) : badge ? (
+                        <span className="inline-flex items-center gap-1 bg-sidebar-primary text-sidebar-primary-foreground text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                          <Star className="w-3 h-3 fill-current" />
+                          {badge}
+                        </span>
+                      ) : null}
+                    </div>
 
-                    <div className="p-5 pt-6 flex-1">
-                      {/* Plan name & check */}
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-bold text-foreground text-base" data-testid={`text-plan-name-${plan.id}`}>
-                          {plan.planName}
-                        </h3>
-                        {isSelected && !isCurrent && (
-                          <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="w-3 h-3 text-primary-foreground" />
-                          </span>
-                        )}
-                      </div>
+                    <div className="p-5 pt-7 flex-1">
+                      {/* Plan name */}
+                      <h3 className="font-bold text-foreground text-base mb-1" data-testid={`text-plan-name-${plan.id}`}>
+                        {plan.planName}
+                      </h3>
                       <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
                         {plan.description || `The ${plan.planName} plan for IndoScribe Pro.`}
                       </p>
@@ -253,7 +267,9 @@ export default function SelectPlan() {
                         {billing === "annual" && !isFree && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             ₹{parseFloat(plan.annualPrice).toLocaleString("en-IN")} billed annually
-                            {savings && <span className="ml-1 text-sidebar-primary font-medium">· {savings}</span>}
+                            {savings && (
+                              <span className="ml-1 text-sidebar-primary font-medium">· {savings}</span>
+                            )}
                           </div>
                         )}
                         <div className="flex items-center gap-1 mt-2">
@@ -265,52 +281,21 @@ export default function SelectPlan() {
                         </div>
                       </div>
 
-                      {/* Features */}
-                      <ul className="space-y-2">
-                        {COMPARISON_FEATURES.map((feat) => {
-                          const included = plan.features?.includes(feat);
-                          const meta = FEATURE_LABELS[feat];
-                          return (
-                            <li
-                              key={feat}
-                              className={`flex items-start gap-2 text-xs ${included ? "text-foreground" : "text-muted-foreground/50"}`}
-                            >
-                              <span className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${included ? "bg-primary/10" : "bg-muted"}`}>
-                                {included ? (
-                                  <Check className="w-2.5 h-2.5 text-primary" />
-                                ) : (
-                                  <Minus className="w-2.5 h-2.5 text-muted-foreground/30" />
-                                )}
+                      {/* Features — from plan data */}
+                      {planFeatures.length > 0 ? (
+                        <ul className="space-y-2">
+                          {planFeatures.map((feat) => (
+                            <li key={feat} className="flex items-start gap-2 text-xs text-foreground">
+                              <span className="mt-0.5 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Check className="w-2.5 h-2.5 text-primary" />
                               </span>
-                              {meta?.label ?? feat}
+                              {featureLabel(feat)}
                             </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-
-                    {/* CTA button */}
-                    <div className="px-5 pb-5">
-                      <button
-                        data-testid={`button-select-plan-${plan.id}`}
-                        onClick={(e) => { e.stopPropagation(); if (!isCurrent) setSelectedPlanId(plan.id); }}
-                        disabled={isCurrent || mutation.isPending}
-                        className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
-                          isCurrent
-                            ? "bg-muted text-muted-foreground cursor-not-allowed"
-                            : isSelected
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                            : highlight
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90 opacity-80"
-                            : "bg-muted text-foreground hover:bg-accent"
-                        }`}
-                      >
-                        {isCurrent
-                          ? "Current plan"
-                          : isSelected
-                          ? `Continue with ${plan.planName}`
-                          : `Choose ${plan.planName}`}
-                      </button>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">No features listed.</p>
+                      )}
                     </div>
                   </div>
                 );
@@ -347,7 +332,7 @@ export default function SelectPlan() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  {selectedPlanId ? "Continue to Dashboard" : "Start with Free Plan"}
+                  {selectedPlanId ? "Go to Dashboard" : "Start with Free Plan"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
@@ -364,6 +349,7 @@ export default function SelectPlan() {
               </div>
             )}
           </div>
+
         </div>
       </div>
     </div>
