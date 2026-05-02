@@ -204,9 +204,14 @@ export default function NewProject() {
         <div className="flex items-center gap-2" data-testid="text-user-name">
           <span className="text-sm text-muted-foreground">{user.fullName}</span>
           <span className="text-xs text-muted-foreground">|</span>
-          <span className="text-xs text-muted-foreground" data-testid="text-plan-header">
+          <button
+            onClick={() => setLocation("/upgrade")}
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all"
+            data-testid="text-plan-header"
+            title="Click to change plan"
+          >
             {user.planName} plan &middot; {minutesRemaining.toFixed(1)} min remaining
-          </span>
+          </button>
         </div>
         <div className="flex-1" />
         <HowItWorks />

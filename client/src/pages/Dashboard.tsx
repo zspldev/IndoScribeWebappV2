@@ -87,10 +87,21 @@ export default function Dashboard() {
             {user.fullName}
           </span>
           <span className="text-xs text-muted-foreground">|</span>
-          <span className={`text-xs ${isTrialExpired ? "text-destructive font-medium" : "text-muted-foreground"}`} data-testid="text-trial-info">
-            {user.planName} plan{trialEndDate && !isTrialExpired ? `; Ends on ${formatTrialDate(trialEndDate)}` : ""}
-            {isTrialExpired ? "; Trial Expired" : ""}
-          </span>
+          {user.role !== "admin" ? (
+            <button
+              onClick={() => setLocation("/upgrade")}
+              className={`text-xs underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all ${isTrialExpired ? "text-destructive font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              data-testid="text-trial-info"
+              title="Click to change plan"
+            >
+              {user.planName} plan{trialEndDate && !isTrialExpired ? `; Ends on ${formatTrialDate(trialEndDate)}` : ""}
+              {isTrialExpired ? "; Trial Expired" : ""}
+            </button>
+          ) : (
+            <span className="text-xs text-muted-foreground" data-testid="text-trial-info">
+              {user.planName} plan
+            </span>
+          )}
         </div>
         <div className="flex-1" />
         <HowItWorks />
@@ -112,6 +123,15 @@ export default function Dashboard() {
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5" data-testid="text-plan-status">
               {user.planName} Plan &middot; {minutesRemaining.toFixed(1)} of {totalMinutes} minutes remaining
+              {user.role !== "admin" && (
+                <button
+                  onClick={() => setLocation("/upgrade")}
+                  className="ml-2 text-primary underline underline-offset-2 hover:no-underline transition-all"
+                  data-testid="link-change-plan"
+                >
+                  Change plan
+                </button>
+              )}
             </p>
           </div>
           <Button
