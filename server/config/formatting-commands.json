@@ -1,0 +1,877 @@
+{
+  "commands": [
+    {
+      "id": "new-line-en",
+      "phrase": "new line",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a line break (English)"
+    },
+    {
+      "id": "newline-en",
+      "phrase": "newline",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a line break - alternative (English)"
+    },
+    {
+      "id": "new-paragraph-en",
+      "phrase": "new paragraph",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a paragraph break (English)"
+    },
+    {
+      "id": "new-para-en",
+      "phrase": "new para",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a paragraph break - alternative (English)"
+    },
+    {
+      "id": "new-page-en",
+      "phrase": "new page",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a page break (English)"
+    },
+    {
+      "id": "next-page-en",
+      "phrase": "next page",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a page break - alternative (English)"
+    },
+    {
+      "id": "comma-en",
+      "phrase": "comma",
+      "replacement": ",",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a comma (English)"
+    },
+    {
+      "id": "period-en",
+      "phrase": "period",
+      "replacement": ".",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a period (English)"
+    },
+    {
+      "id": "full-stop-en",
+      "phrase": "full stop",
+      "replacement": ".",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a period - alternative (English)"
+    },
+    {
+      "id": "question-mark-en",
+      "phrase": "question mark",
+      "replacement": "?",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert a question mark (English)"
+    },
+    {
+      "id": "exclamation-mark-en",
+      "phrase": "exclamation mark",
+      "replacement": "!",
+      "isActive": true,
+      "language": "en",
+      "description": "Insert an exclamation mark (English)"
+    },
+    {
+      "id": "new-line-hi-native",
+      "phrase": "नई लाइन",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a line break (Hindi native)"
+    },
+    {
+      "id": "new-line-hi-phonetic",
+      "phrase": "न्यू लाइन",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a line break (Hindi phonetic English)"
+    },
+    {
+      "id": "newline-hi-phonetic",
+      "phrase": "न्यूलाइन",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a line break - one word (Hindi phonetic English)"
+    },
+    {
+      "id": "new-paragraph-hi-native",
+      "phrase": "नया पैराग्राफ",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a paragraph break (Hindi native)"
+    },
+    {
+      "id": "new-paragraph-hi-phonetic",
+      "phrase": "न्यू पैराग्राफ",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a paragraph break (Hindi phonetic English)"
+    },
+    {
+      "id": "new-para-hi-native",
+      "phrase": "नया पैरा",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a paragraph break - short (Hindi native)"
+    },
+    {
+      "id": "new-para-hi-phonetic",
+      "phrase": "न्यू पैरा",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a paragraph break - short (Hindi phonetic English)"
+    },
+    {
+      "id": "new-page-hi-native",
+      "phrase": "नया पेज",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a page break (Hindi native)"
+    },
+    {
+      "id": "new-page-hi-phonetic",
+      "phrase": "न्यू पेज",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a page break (Hindi phonetic English)"
+    },
+    {
+      "id": "next-page-hi-native",
+      "phrase": "अगला पेज",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a page break - alternative (Hindi native)"
+    },
+    {
+      "id": "next-page-hi-phonetic",
+      "phrase": "नेक्स्ट पेज",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a page break - alternative (Hindi phonetic English)"
+    },
+    {
+      "id": "comma-hi-native",
+      "phrase": "अल्पविराम",
+      "replacement": ",",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a comma (Hindi native)"
+    },
+    {
+      "id": "comma-hi-phonetic",
+      "phrase": "कॉमा",
+      "replacement": ",",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a comma (Hindi phonetic English)"
+    },
+    {
+      "id": "period-hi-native",
+      "phrase": "पूर्ण विराम",
+      "replacement": ".",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a period (Hindi native)"
+    },
+    {
+      "id": "period-hi-phonetic",
+      "phrase": "पीरियड",
+      "replacement": ".",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a period (Hindi phonetic English)"
+    },
+    {
+      "id": "full-stop-hi-native",
+      "phrase": "फुल स्टॉप",
+      "replacement": ".",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a period - alternative (Hindi native)"
+    },
+    {
+      "id": "question-mark-hi-native",
+      "phrase": "प्रश्नवाचक चिह्न",
+      "replacement": "?",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a question mark (Hindi native)"
+    },
+    {
+      "id": "question-mark-hi-phonetic",
+      "phrase": "क्वेश्चन मार्क",
+      "replacement": "?",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert a question mark (Hindi phonetic English)"
+    },
+    {
+      "id": "exclamation-mark-hi-native",
+      "phrase": "विस्मयादिबोधक चिह्न",
+      "replacement": "!",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert an exclamation mark (Hindi native)"
+    },
+    {
+      "id": "exclamation-mark-hi-phonetic",
+      "phrase": "एक्सक्लेमेशन मार्क",
+      "replacement": "!",
+      "isActive": true,
+      "language": "hi",
+      "description": "Insert an exclamation mark (Hindi phonetic English)"
+    },
+    {
+      "id": "new-line-mr-native",
+      "phrase": "नवीन ओळ",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a line break (Marathi native)"
+    },
+    {
+      "id": "new-line-mr-phonetic",
+      "phrase": "न्यू लाईन",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a line break (Marathi phonetic English)"
+    },
+    {
+      "id": "newline-mr-phonetic",
+      "phrase": "न्यूलाईन",
+      "replacement": "\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a line break - one word (Marathi phonetic English)"
+    },
+    {
+      "id": "new-paragraph-mr-native",
+      "phrase": "नवीन परिच्छेद",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a paragraph break (Marathi native)"
+    },
+    {
+      "id": "new-paragraph-mr-phonetic",
+      "phrase": "न्यू पॅराग्राफ",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a paragraph break (Marathi phonetic English)"
+    },
+    {
+      "id": "new-para-mr-native",
+      "phrase": "नवीन पॅरा",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a paragraph break - short (Marathi native)"
+    },
+    {
+      "id": "new-para-mr-phonetic",
+      "phrase": "न्यू पॅरा",
+      "replacement": "\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a paragraph break - short (Marathi phonetic English)"
+    },
+    {
+      "id": "new-page-mr-native",
+      "phrase": "नवे पान",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a page break (Marathi native)"
+    },
+    {
+      "id": "new-page-mr-phonetic",
+      "phrase": "न्यू पेज",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a page break (Marathi phonetic English)"
+    },
+    {
+      "id": "next-page-mr-native",
+      "phrase": "पुढील पान",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a page break - alternative (Marathi native)"
+    },
+    {
+      "id": "next-page-mr-phonetic",
+      "phrase": "नेक्स्ट पेज",
+      "replacement": "\\n\\n--- PAGE BREAK ---\\n\\n",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a page break - alternative (Marathi phonetic English)"
+    },
+    {
+      "id": "comma-mr-native",
+      "phrase": "स्वल्पविराम",
+      "replacement": ",",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a comma (Marathi native)"
+    },
+    {
+      "id": "comma-mr-phonetic",
+      "phrase": "कॉमा",
+      "replacement": ",",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a comma (Marathi phonetic English)"
+    },
+    {
+      "id": "period-mr-native",
+      "phrase": "पूर्णविराम",
+      "replacement": ".",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a period (Marathi native)"
+    },
+    {
+      "id": "period-mr-phonetic",
+      "phrase": "पीरियड",
+      "replacement": ".",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a period (Marathi phonetic English)"
+    },
+    {
+      "id": "full-stop-mr-native",
+      "phrase": "फुल स्टॉप",
+      "replacement": ".",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a period - alternative (Marathi native)"
+    },
+    {
+      "id": "question-mark-mr-native",
+      "phrase": "प्रश्नचिन्ह",
+      "replacement": "?",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a question mark (Marathi native)"
+    },
+    {
+      "id": "question-mark-mr-phonetic",
+      "phrase": "क्वेश्चन मार्क",
+      "replacement": "?",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert a question mark (Marathi phonetic English)"
+    },
+    {
+      "id": "exclamation-mark-mr-native",
+      "phrase": "उद्गारवाचक चिन्ह",
+      "replacement": "!",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert an exclamation mark (Marathi native)"
+    },
+    {
+      "id": "exclamation-mark-mr-phonetic",
+      "phrase": "एक्स्क्लेमेशन मार्क",
+      "replacement": "!",
+      "isActive": true,
+      "language": "mr",
+      "description": "Insert an exclamation mark (Marathi phonetic English)"
+    },
+    {
+      "id": "bold-on-en",
+      "phrase": "bold on",
+      "replacement": "**",
+      "isActive": true,
+      "language": "en",
+      "description": "Start bold text (English)"
+    },
+    {
+      "id": "bold-off-en",
+      "phrase": "bold off",
+      "replacement": "**",
+      "isActive": true,
+      "language": "en",
+      "description": "End bold text (English)"
+    },
+    {
+      "id": "italic-on-en",
+      "phrase": "italic on",
+      "replacement": "*",
+      "isActive": true,
+      "language": "en",
+      "description": "Start italic text (English)"
+    },
+    {
+      "id": "italic-off-en",
+      "phrase": "italic off",
+      "replacement": "*",
+      "isActive": true,
+      "language": "en",
+      "description": "End italic text (English)"
+    },
+    {
+      "id": "underline-on-en",
+      "phrase": "underline on",
+      "replacement": "__",
+      "isActive": true,
+      "language": "en",
+      "description": "Start underline text (English)"
+    },
+    {
+      "id": "underline-off-en",
+      "phrase": "underline off",
+      "replacement": "__",
+      "isActive": true,
+      "language": "en",
+      "description": "End underline text (English)"
+    },
+    {
+      "id": "strikethrough-on-en",
+      "phrase": "strikethrough on",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "en",
+      "description": "Start strikethrough text (English)"
+    },
+    {
+      "id": "strikethrough-off-en",
+      "phrase": "strikethrough off",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "en",
+      "description": "End strikethrough text (English)"
+    },
+    {
+      "id": "heading-one-en",
+      "phrase": "heading one",
+      "replacement": "\\n# ",
+      "isActive": true,
+      "language": "en",
+      "description": "Start heading 1 (English)"
+    },
+    {
+      "id": "heading-1-en",
+      "phrase": "heading 1",
+      "replacement": "\\n# ",
+      "isActive": true,
+      "language": "en",
+      "description": "Start heading 1 - alternative (English)"
+    },
+    {
+      "id": "heading-two-en",
+      "phrase": "heading two",
+      "replacement": "\\n## ",
+      "isActive": true,
+      "language": "en",
+      "description": "Start heading 2 (English)"
+    },
+    {
+      "id": "heading-2-en",
+      "phrase": "heading 2",
+      "replacement": "\\n## ",
+      "isActive": true,
+      "language": "en",
+      "description": "Start heading 2 - alternative (English)"
+    },
+    {
+      "id": "heading-three-en",
+      "phrase": "heading three",
+      "replacement": "\\n### ",
+      "isActive": true,
+      "language": "en",
+      "description": "Start heading 3 (English)"
+    },
+    {
+      "id": "heading-3-en",
+      "phrase": "heading 3",
+      "replacement": "\\n### ",
+      "isActive": true,
+      "language": "en",
+      "description": "Start heading 3 - alternative (English)"
+    },
+    {
+      "id": "bold-on-hi-native",
+      "phrase": "बोल्ड शुरू",
+      "replacement": "**",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start bold text (Hindi native)"
+    },
+    {
+      "id": "bold-off-hi-native",
+      "phrase": "बोल्ड बंद",
+      "replacement": "**",
+      "isActive": true,
+      "language": "hi",
+      "description": "End bold text (Hindi native)"
+    },
+    {
+      "id": "bold-on-hi-phonetic",
+      "phrase": "बोल्ड ऑन",
+      "replacement": "**",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start bold text (Hindi phonetic English)"
+    },
+    {
+      "id": "bold-off-hi-phonetic",
+      "phrase": "बोल्ड ऑफ",
+      "replacement": "**",
+      "isActive": true,
+      "language": "hi",
+      "description": "End bold text (Hindi phonetic English)"
+    },
+    {
+      "id": "italic-on-hi-native",
+      "phrase": "इटैलिक शुरू",
+      "replacement": "*",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start italic text (Hindi native)"
+    },
+    {
+      "id": "italic-off-hi-native",
+      "phrase": "इटैलिक बंद",
+      "replacement": "*",
+      "isActive": true,
+      "language": "hi",
+      "description": "End italic text (Hindi native)"
+    },
+    {
+      "id": "italic-on-hi-phonetic",
+      "phrase": "इटैलिक ऑन",
+      "replacement": "*",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start italic text (Hindi phonetic English)"
+    },
+    {
+      "id": "italic-off-hi-phonetic",
+      "phrase": "इटैलिक ऑफ",
+      "replacement": "*",
+      "isActive": true,
+      "language": "hi",
+      "description": "End italic text (Hindi phonetic English)"
+    },
+    {
+      "id": "underline-on-hi-native",
+      "phrase": "रेखांकित शुरू",
+      "replacement": "__",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start underline text (Hindi native)"
+    },
+    {
+      "id": "underline-off-hi-native",
+      "phrase": "रेखांकित बंद",
+      "replacement": "__",
+      "isActive": true,
+      "language": "hi",
+      "description": "End underline text (Hindi native)"
+    },
+    {
+      "id": "underline-on-hi-phonetic",
+      "phrase": "अंडरलाइन ऑन",
+      "replacement": "__",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start underline text (Hindi phonetic English)"
+    },
+    {
+      "id": "underline-off-hi-phonetic",
+      "phrase": "अंडरलाइन ऑफ",
+      "replacement": "__",
+      "isActive": true,
+      "language": "hi",
+      "description": "End underline text (Hindi phonetic English)"
+    },
+    {
+      "id": "strikethrough-on-hi-native",
+      "phrase": "काटना शुरू",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start strikethrough text (Hindi native)"
+    },
+    {
+      "id": "strikethrough-off-hi-native",
+      "phrase": "काटना बंद",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "hi",
+      "description": "End strikethrough text (Hindi native)"
+    },
+    {
+      "id": "strikethrough-on-hi-phonetic",
+      "phrase": "स्ट्राइकथ्रू ऑन",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start strikethrough text (Hindi phonetic English)"
+    },
+    {
+      "id": "strikethrough-off-hi-phonetic",
+      "phrase": "स्ट्राइकथ्रू ऑफ",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "hi",
+      "description": "End strikethrough text (Hindi phonetic English)"
+    },
+    {
+      "id": "heading-1-hi-native",
+      "phrase": "शीर्षक एक",
+      "replacement": "\\n# ",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start heading 1 (Hindi native)"
+    },
+    {
+      "id": "heading-1-hi-phonetic",
+      "phrase": "हेडिंग वन",
+      "replacement": "\\n# ",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start heading 1 (Hindi phonetic English)"
+    },
+    {
+      "id": "heading-2-hi-native",
+      "phrase": "शीर्षक दो",
+      "replacement": "\\n## ",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start heading 2 (Hindi native)"
+    },
+    {
+      "id": "heading-2-hi-phonetic",
+      "phrase": "हेडिंग टू",
+      "replacement": "\\n## ",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start heading 2 (Hindi phonetic English)"
+    },
+    {
+      "id": "heading-3-hi-native",
+      "phrase": "शीर्षक तीन",
+      "replacement": "\\n### ",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start heading 3 (Hindi native)"
+    },
+    {
+      "id": "heading-3-hi-phonetic",
+      "phrase": "हेडिंग थ्री",
+      "replacement": "\\n### ",
+      "isActive": true,
+      "language": "hi",
+      "description": "Start heading 3 (Hindi phonetic English)"
+    },
+    {
+      "id": "bold-on-mr-native",
+      "phrase": "ठळक सुरू",
+      "replacement": "**",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start bold text (Marathi native)"
+    },
+    {
+      "id": "bold-off-mr-native",
+      "phrase": "ठळक बंद",
+      "replacement": "**",
+      "isActive": true,
+      "language": "mr",
+      "description": "End bold text (Marathi native)"
+    },
+    {
+      "id": "bold-on-mr-phonetic",
+      "phrase": "बोल्ड ऑन",
+      "replacement": "**",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start bold text (Marathi phonetic English)"
+    },
+    {
+      "id": "bold-off-mr-phonetic",
+      "phrase": "बोल्ड ऑफ",
+      "replacement": "**",
+      "isActive": true,
+      "language": "mr",
+      "description": "End bold text (Marathi phonetic English)"
+    },
+    {
+      "id": "italic-on-mr-native",
+      "phrase": "तिरपा सुरू",
+      "replacement": "*",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start italic text (Marathi native)"
+    },
+    {
+      "id": "italic-off-mr-native",
+      "phrase": "तिरपा बंद",
+      "replacement": "*",
+      "isActive": true,
+      "language": "mr",
+      "description": "End italic text (Marathi native)"
+    },
+    {
+      "id": "italic-on-mr-phonetic",
+      "phrase": "इटॅलिक ऑन",
+      "replacement": "*",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start italic text (Marathi phonetic English)"
+    },
+    {
+      "id": "italic-off-mr-phonetic",
+      "phrase": "इटॅलिक ऑफ",
+      "replacement": "*",
+      "isActive": true,
+      "language": "mr",
+      "description": "End italic text (Marathi phonetic English)"
+    },
+    {
+      "id": "underline-on-mr-native",
+      "phrase": "अधोरेखित सुरू",
+      "replacement": "__",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start underline text (Marathi native)"
+    },
+    {
+      "id": "underline-off-mr-native",
+      "phrase": "अधोरेखित बंद",
+      "replacement": "__",
+      "isActive": true,
+      "language": "mr",
+      "description": "End underline text (Marathi native)"
+    },
+    {
+      "id": "underline-on-mr-phonetic",
+      "phrase": "अंडरलाईन ऑन",
+      "replacement": "__",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start underline text (Marathi phonetic English)"
+    },
+    {
+      "id": "underline-off-mr-phonetic",
+      "phrase": "अंडरलाईन ऑफ",
+      "replacement": "__",
+      "isActive": true,
+      "language": "mr",
+      "description": "End underline text (Marathi phonetic English)"
+    },
+    {
+      "id": "strikethrough-on-mr-native",
+      "phrase": "कापलेले सुरू",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start strikethrough text (Marathi native)"
+    },
+    {
+      "id": "strikethrough-off-mr-native",
+      "phrase": "कापलेले बंद",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "mr",
+      "description": "End strikethrough text (Marathi native)"
+    },
+    {
+      "id": "strikethrough-on-mr-phonetic",
+      "phrase": "स्ट्राइकथ्रू ऑन",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start strikethrough text (Marathi phonetic English)"
+    },
+    {
+      "id": "strikethrough-off-mr-phonetic",
+      "phrase": "स्ट्राइकथ्रू ऑफ",
+      "replacement": "~~",
+      "isActive": true,
+      "language": "mr",
+      "description": "End strikethrough text (Marathi phonetic English)"
+    },
+    {
+      "id": "heading-1-mr-native",
+      "phrase": "शीर्षक एक",
+      "replacement": "\\n# ",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start heading 1 (Marathi native)"
+    },
+    {
+      "id": "heading-1-mr-phonetic",
+      "phrase": "हेडिंग वन",
+      "replacement": "\\n# ",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start heading 1 (Marathi phonetic English)"
+    },
+    {
+      "id": "heading-2-mr-native",
+      "phrase": "शीर्षक दोन",
+      "replacement": "\\n## ",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start heading 2 (Marathi native)"
+    },
+    {
+      "id": "heading-2-mr-phonetic",
+      "phrase": "हेडिंग टू",
+      "replacement": "\\n## ",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start heading 2 (Marathi phonetic English)"
+    },
+    {
+      "id": "heading-3-mr-native",
+      "phrase": "शीर्षक तीन",
+      "replacement": "\\n### ",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start heading 3 (Marathi native)"
+    },
+    {
+      "id": "heading-3-mr-phonetic",
+      "phrase": "हेडिंग थ्री",
+      "replacement": "\\n### ",
+      "isActive": true,
+      "language": "mr",
+      "description": "Start heading 3 (Marathi phonetic English)"
+    }
+  ],
+  "updatedAt": "2025-11-07T01:30:00.000Z"
+}

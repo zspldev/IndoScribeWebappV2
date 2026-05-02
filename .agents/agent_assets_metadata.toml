@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "x-ou-uX0eA-if79c6sMH2"
+uri = "file://IndoScribeWebappV1.md"
+type = "text"
+title = "IndoScribe Pro V1 — Full Documentation"
+
+[[outputs]]
+id = "bBmhbqQW8LXaoBXlfTR5A"
+uri = "file://IndoScribeWebappV2.md"
+type = "text"
+title = "IndoScribe Pro V2 — Feature & Change Log"

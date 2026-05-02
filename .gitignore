@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Large binary assets — not needed in git
+attached_assets/
+*.mp3
+*.m4a
+*.wav
+*.mp4
+*.webm
