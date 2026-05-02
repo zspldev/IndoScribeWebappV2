@@ -85,13 +85,11 @@ export default function SelectPlan() {
 
   const mutation = useMutation({
     mutationFn: async (planId: number) => {
-      const res = await apiRequest("PATCH", "/api/users/me/plan", { planId });
-      return res.json();
+      await apiRequest("PATCH", "/api/users/me/plan", { planId });
     },
-    onSuccess: async () => {
-      await refetchUser();
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      setLocation("/dashboard");
+      refetchUser().finally(() => setLocation("/dashboard"));
     },
   });
 
@@ -158,37 +156,33 @@ export default function SelectPlan() {
           </div>
 
           {/* Billing toggle */}
-          <div className="flex flex-col items-center gap-2 mb-8">
-            <div className="flex items-center gap-3" data-testid="billing-toggle">
-              <span
-                className={`text-sm font-medium transition-colors ${billing === "monthly" ? "text-foreground" : "text-muted-foreground"}`}
+          <div className="flex flex-col items-center gap-2 mb-8" data-testid="billing-toggle">
+            <div className="inline-flex items-center rounded-lg border border-border bg-muted p-1 gap-1">
+              <button
+                onClick={() => setBilling("monthly")}
+                data-testid="toggle-billing-monthly"
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  billing === "monthly"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 Monthly
-              </span>
-              <button
-                onClick={() => setBilling(b => b === "monthly" ? "annual" : "monthly")}
-                data-testid="toggle-billing"
-                className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${billing === "annual" ? "bg-primary" : "bg-input"}`}
-              >
-                <span
-                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${billing === "annual" ? "translate-x-6" : "translate-x-1"}`}
-                />
               </button>
-              <span
-                className={`text-sm font-medium transition-colors ${billing === "annual" ? "text-foreground" : "text-muted-foreground"}`}
+              <button
+                onClick={() => setBilling("annual")}
+                data-testid="toggle-billing-annual"
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                  billing === "annual"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 Annual
-              </span>
-            </div>
-            <div className="h-5 flex items-center">
-              {billing === "annual" && (
-                <Badge
-                  variant="secondary"
-                  className="bg-sidebar-primary/15 text-sidebar-primary border-0 text-xs font-semibold"
-                >
-                  Save up to 17%
-                </Badge>
-              )}
+                <span className="text-[10px] font-bold bg-sidebar-primary/15 text-sidebar-primary px-1.5 py-0.5 rounded-full leading-none">
+                  −17%
+                </span>
+              </button>
             </div>
           </div>
 
