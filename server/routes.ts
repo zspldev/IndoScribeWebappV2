@@ -1551,10 +1551,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/plans", async (req, res) => {
     try {
       const allPlans = await storage.getPlans();
-      res.json(allPlans);
+      res.json(allPlans.filter(p => p.isActive));
     } catch (error) {
       console.error("Error fetching plans:", error);
       res.status(500).json({ error: "Failed to fetch plans" });
+    }
+  });
+
+  app.patch("/api/users/me/plan", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { planId } = req.body;
+      if (!planId || typeof planId !== "number") {
+        return res.status(400).json({ error: "Valid planId is required" });
+      }
+      const plan = await storage.getPlanById(planId);
+      if (!plan || !plan.isActive) {
+        return res.status(404).json({ error: "Plan not found or inactive" });
+      }
+      await storage.updateUser(userId, { planId });
+      res.json({ success: true, planId });
+    } catch (error) {
+      console.error("Error updating user plan:", error);
+      res.status(500).json({ error: "Failed to update plan" });
     }
   });
 

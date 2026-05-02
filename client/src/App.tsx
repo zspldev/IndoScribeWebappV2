@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import NewProject from "@/pages/NewProject";
 import ProjectEditor from "@/pages/ProjectEditor";
 import AdminDashboard from "@/pages/AdminDashboard";
+import SelectPlan from "@/pages/SelectPlan";
 import NotFound from "@/pages/not-found";
 import Footer from "@/components/Footer";
 import { Loader2 } from "lucide-react";
@@ -73,6 +74,12 @@ function Router() {
       </Route>
       <Route path="/projects/:id">
         {() => <ProtectedRoute component={ProjectEditor} />}
+      </Route>
+      <Route path="/select-plan">
+        {() => <ProtectedRoute component={SelectPlan} />}
+      </Route>
+      <Route path="/upgrade">
+        {() => <ProtectedRoute component={SelectPlan} />}
       </Route>
       <Route path="/admin">
         {() => <AdminRoute component={AdminDashboard} />}

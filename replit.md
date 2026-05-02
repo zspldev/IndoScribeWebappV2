@@ -13,7 +13,7 @@ The frontend is built with React 18+ (TypeScript), Vite, Wouter for routing, sha
 
 **Key Features:**
 - **User Interface:** React components, shadcn/ui, Tailwind CSS.
-- **Pages:** Landing, Register, Dashboard, Project Creation, Project Editor, Admin Dashboard.
+- **Pages:** Landing, Register, **SelectPlan**, Dashboard, Project Creation, Project Editor, Admin Dashboard.
 - **Branding:** Saffron orange (#FF9933) and deep purple (#6B21A8) color scheme.
 - **Typography:** Google Fonts CDN for Noto Sans Devanagari.
 
@@ -24,7 +24,7 @@ The backend is an Express.js REST API developed with TypeScript, utilizing sessi
 - **Authentication:** Register, Login, Logout, Get Current User.
 - **Projects:** CRUD operations for projects, audio upload, transcription initiation, audio streaming, DOCX export.
 - **Translations:** List, Create/Retranslate, Update translated text.
-- **Plans:** Public listing of plans, Admin CRUD for plans.
+- **Plans:** Public listing of active plans (`GET /api/plans`), self-service plan selection (`PATCH /api/users/me/plan`), Admin CRUD for plans.
 - **Admin:** User management, usage statistics, STT provider configuration, system settings, formatting command management.
 
 ### Data Storage

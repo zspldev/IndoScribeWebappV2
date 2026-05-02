@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(errData.error || "Registration failed");
     }
     await fetchUser();
-    setLocation("/dashboard");
+    setLocation("/select-plan");
   };
 
   const logout = async () => {
