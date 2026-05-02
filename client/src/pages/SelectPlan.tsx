@@ -88,8 +88,7 @@ export default function SelectPlan() {
       await apiRequest("PATCH", "/api/users/me/plan", { planId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      refetchUser().finally(() => setLocation("/dashboard"));
+      setLocation("/dashboard");
     },
   });
 

@@ -193,11 +193,21 @@ export default function NewProject() {
 
   const allowedLanguages = (languagesList ?? []).filter(l => l.isActive);
 
+  const minutesUsed = parseFloat(user.totalMinutesTranscribed || "0");
+  const totalMinutes = user.totalMinutes || 0;
+  const minutesRemaining = Math.max(0, totalMinutes - minutesUsed);
+
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-new-project">
       <nav className="h-14 border-b flex items-center px-6 gap-4 bg-card">
         <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
-        <span className="text-sm text-muted-foreground" data-testid="text-user-name">{user.fullName}</span>
+        <div className="flex items-center gap-2" data-testid="text-user-name">
+          <span className="text-sm text-muted-foreground">{user.fullName}</span>
+          <span className="text-xs text-muted-foreground">|</span>
+          <span className="text-xs text-muted-foreground" data-testid="text-plan-header">
+            {user.planName} plan &middot; {minutesRemaining.toFixed(1)} min remaining
+          </span>
+        </div>
         <div className="flex-1" />
         <HowItWorks />
       </nav>

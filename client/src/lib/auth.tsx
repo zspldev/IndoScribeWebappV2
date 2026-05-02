@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { useLocation } from "wouter";
 
+const SESSION_KEY = "isp_session_active";
+
 interface AuthUser {
   id: number;
   email: string;
@@ -50,9 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
 
   const pendingRoute = useRef<string | null>(null);
+  const isInitialLoad = useRef(true);
 
   const fetchUser = useCallback(async () => {
     try {
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        if (!sessionStorage.getItem(SESSION_KEY)) {
+          await fetch("/api/auth/logout", { method: "POST" });
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+      }
       const res = await fetch("/api/auth/me", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
@@ -90,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.error || "Login failed");
     }
     const userData = await res.json().catch(() => null);
+    sessionStorage.setItem(SESSION_KEY, "true");
     pendingRoute.current = userData?.role === "admin" ? "/admin" : "/dashboard";
     await fetchUser();
   };
@@ -104,11 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errData = await res.json();
       throw new Error(errData.error || "Registration failed");
     }
+    sessionStorage.setItem(SESSION_KEY, "true");
     pendingRoute.current = "/select-plan";
     await fetchUser();
   };
 
   const logout = async () => {
+    sessionStorage.removeItem(SESSION_KEY);
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     setLocation("/");
