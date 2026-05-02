@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { useLocation } from "wouter";
 
 interface AuthUser {
@@ -49,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [, setLocation] = useLocation();
 
+  const pendingRoute = useRef<string | null>(null);
+
   const fetchUser = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/me", { cache: "no-store" });
@@ -69,6 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
+  useEffect(() => {
+    if (user && pendingRoute.current) {
+      const route = pendingRoute.current;
+      pendingRoute.current = null;
+      setLocation(route);
+    }
+  }, [user, setLocation]);
+
   const login = async (email: string, password: string) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -79,13 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       throw new Error(data.error || "Login failed");
     }
-    await fetchUser();
     const userData = await res.json().catch(() => null);
-    if (userData?.role === "admin") {
-      setLocation("/admin");
-    } else {
-      setLocation("/dashboard");
-    }
+    pendingRoute.current = userData?.role === "admin" ? "/admin" : "/dashboard";
+    await fetchUser();
   };
 
   const register = async (data: RegisterData) => {
@@ -98,8 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errData = await res.json();
       throw new Error(errData.error || "Registration failed");
     }
+    pendingRoute.current = "/select-plan";
     await fetchUser();
-    setLocation("/select-plan");
   };
 
   const logout = async () => {
