@@ -31,6 +31,8 @@ import {
   Save,
   X,
   Search,
+  Globe,
+  CheckSquare,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguages } from "@/lib/useLanguages";
@@ -64,6 +66,15 @@ interface Plan {
   daysLimit: number | null;
   isActive: boolean;
   description: string | null;
+  languageGroupId: number | null;
+  features: string[];
+}
+
+interface LanguageGroup {
+  id: number;
+  name: string;
+  description: string | null;
+  languages: { id: number; name: string; code: string; script: string; isActive: boolean }[];
 }
 
 interface Stats {
@@ -73,7 +84,7 @@ interface Stats {
   totalCostInr: number;
 }
 
-type Tab = "overview" | "users" | "plans" | "commands" | "providers" | "settings";
+type Tab = "overview" | "users" | "plans" | "language-groups" | "commands" | "providers" | "settings";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -107,6 +118,7 @@ export default function AdminDashboard() {
             { id: "overview" as Tab, label: "Overview", icon: BarChart3 },
             { id: "users" as Tab, label: "Users", icon: Users },
             { id: "plans" as Tab, label: "Plans", icon: CreditCard },
+            { id: "language-groups" as Tab, label: "Lang Groups", icon: Globe },
             { id: "commands" as Tab, label: "Commands", icon: FileText },
             { id: "providers" as Tab, label: "Providers", icon: Mic },
             { id: "settings" as Tab, label: "Settings", icon: Settings },
@@ -128,6 +140,7 @@ export default function AdminDashboard() {
           {activeTab === "overview" && <OverviewTab />}
           {activeTab === "users" && <UsersTab />}
           {activeTab === "plans" && <PlansTab />}
+          {activeTab === "language-groups" && <LanguageGroupsTab />}
           {activeTab === "commands" && <CommandsTab />}
           {activeTab === "providers" && <ProvidersTab />}
           {activeTab === "settings" && <SettingsTab />}
@@ -271,14 +284,15 @@ function UsersTab() {
 const PLAN_FEATURES: { key: string; label: string; group: string }[] = [
   { key: "audio_upload", label: "Upload Audio Files", group: "Input" },
   { key: "live_recording", label: "Live Microphone Recording", group: "Input" },
-  { key: "english", label: "English Language", group: "Languages" },
-  { key: "hindi", label: "Hindi Language", group: "Languages" },
-  { key: "marathi", label: "Marathi Language", group: "Languages" },
   { key: "formatting_commands", label: "Formatting Commands (109)", group: "Editor" },
   { key: "rich_text_editor", label: "Rich Text Editor (TipTap)", group: "Editor" },
-  { key: "translation", label: "Translation", group: "Output" },
-  { key: "docx_export", label: "DOCX Export", group: "Output" },
-  { key: "project_history", label: "Project History", group: "Output" },
+  { key: "translation", label: "Translation", group: "Editor" },
+  { key: "project_history", label: "Project History", group: "Editor" },
+  { key: "docx_export", label: "DOCX Export (gate)", group: "Export" },
+  { key: "docx_watermark", label: "DOCX with Watermark (Starter)", group: "Export" },
+  { key: "docx_no_watermark", label: "DOCX Clean (Basic+)", group: "Export" },
+  { key: "pdf_watermark", label: "PDF with Watermark (Starter)", group: "Export" },
+  { key: "pdf_no_watermark", label: "PDF Clean (Basic+)", group: "Export" },
 ];
 
 const FEATURE_GROUPS = Array.from(new Set(PLAN_FEATURES.map(f => f.group)));
@@ -287,11 +301,15 @@ const emptyPlanForm = {
   planName: "", monthlyPrice: "0", annualPrice: "0",
   totalMinutes: 0, daysLimit: "" as string | number,
   isActive: true, description: "", features: [] as string[],
+  languageGroupId: "" as string | number,
 };
 
 function PlansTab() {
   const { data: allPlans, isLoading } = useQuery<Plan[]>({
     queryKey: ["/api/plans"],
+  });
+  const { data: allLanguageGroups } = useQuery<LanguageGroup[]>({
+    queryKey: ["/api/admin/language-groups"],
   });
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -308,6 +326,7 @@ function PlansTab() {
         annualPrice: data.annualPrice || "0",
         daysLimit: data.daysLimit === "" ? null : Number(data.daysLimit),
         totalMinutes: Number(data.totalMinutes),
+        languageGroupId: data.languageGroupId === "" ? null : Number(data.languageGroupId),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
@@ -324,6 +343,7 @@ function PlansTab() {
         annualPrice: data.annualPrice || "0",
         daysLimit: data.daysLimit === "" ? null : Number(data.daysLimit),
         totalMinutes: Number(data.totalMinutes),
+        languageGroupId: data.languageGroupId === "" ? null : Number(data.languageGroupId),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
@@ -350,6 +370,7 @@ function PlansTab() {
       isActive: plan.isActive,
       description: plan.description ?? "",
       features: (plan.features as string[]) ?? [],
+      languageGroupId: plan.languageGroupId ?? "",
     });
   };
 
@@ -423,6 +444,20 @@ function PlansTab() {
           <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
             placeholder="Brief description" data-testid="input-plan-description" className="mt-1 h-8 text-sm" />
         </div>
+        <div className="col-span-2">
+          <label className="text-xs text-muted-foreground">Language Group</label>
+          <Select value={String(form.languageGroupId || "")} onValueChange={v => setForm({ ...form, languageGroupId: v === "" ? "" : parseInt(v) })}>
+            <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-plan-language-group">
+              <SelectValue placeholder="No language group" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No group (show all active)</SelectItem>
+              {(allLanguageGroups || []).map(g => (
+                <SelectItem key={g.id} value={String(g.id)}>{g.name} ({g.languages.length} languages)</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="col-span-2 flex items-center gap-2">
           <Switch checked={form.isActive} onCheckedChange={v => setForm({ ...form, isActive: v })} data-testid="toggle-plan-active" />
           <span className="text-sm">Active</span>
@@ -482,13 +517,22 @@ function PlansTab() {
                     {plan.description && (
                       <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
                     )}
+                    {plan.languageGroupId && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        <span className="font-medium">Lang Group:</span>{" "}
+                        {allLanguageGroups?.find(g => g.id === plan.languageGroupId)?.name || `Group #${plan.languageGroupId}`}
+                        {" "}({allLanguageGroups?.find(g => g.id === plan.languageGroupId)?.languages.length || 0} languages)
+                      </p>
+                    )}
                     {(plan.features as string[] ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(plan.features as string[]).map(fk => {
                           const feat = PLAN_FEATURES.find(f => f.key === fk);
                           return feat ? (
                             <Badge key={fk} variant="outline" className="text-xs py-0">{feat.label}</Badge>
-                          ) : null;
+                          ) : (
+                            <Badge key={fk} variant="outline" className="text-xs py-0 opacity-60">{fk}</Badge>
+                          );
                         })}
                       </div>
                     )}
@@ -562,6 +606,181 @@ interface FormattingCommand {
   isActive: boolean;
   language: string;
   description?: string;
+}
+
+function LanguageGroupsTab() {
+  const { data: groups, isLoading } = useQuery<LanguageGroup[]>({
+    queryKey: ["/api/admin/language-groups"],
+  });
+  const { data: allLangs } = useQuery<{ id: number; name: string; code: string; script: string; isActive: boolean }[]>({
+    queryKey: ["/api/admin/languages"],
+  });
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", description: "", languageIds: [] as number[] });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "", description: "", languageIds: [] as number[] });
+
+  const createMutation = useMutation({
+    mutationFn: (data: typeof newForm) => apiRequest("POST", "/api/admin/language-groups", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/language-groups"] });
+      setIsAdding(false);
+      setNewForm({ name: "", description: "", languageIds: [] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: typeof editForm }) =>
+      apiRequest("PUT", `/api/admin/language-groups/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/language-groups"] });
+      setEditingId(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/language-groups/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/language-groups"] }),
+  });
+
+  const toggleLang = (form: typeof editForm, setForm: (f: typeof editForm) => void, langId: number) => {
+    const ids = form.languageIds;
+    setForm({ ...form, languageIds: ids.includes(langId) ? ids.filter(i => i !== langId) : [...ids, langId] });
+  };
+
+  const renderGroupForm = (form: typeof editForm, setForm: (f: typeof editForm) => void, onSave: () => void, onCancel: () => void, isPending: boolean, saveLabel = "Save") => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground">Group Name</label>
+          <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+            placeholder="e.g. Extended Group" className="mt-1 h-8 text-sm" data-testid="input-group-name" />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Description</label>
+          <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+            placeholder="Brief description" className="mt-1 h-8 text-sm" data-testid="input-group-description" />
+        </div>
+      </div>
+      <div className="border-t pt-3">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Languages in this group</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto">
+          {(allLangs || []).map(lang => (
+            <label key={lang.id} className="flex items-center gap-1.5 text-xs cursor-pointer" data-testid={`toggle-lang-${lang.id}`}>
+              <input
+                type="checkbox"
+                checked={form.languageIds.includes(lang.id)}
+                onChange={() => toggleLang(form, setForm, lang.id)}
+                className="accent-[hsl(30,100%,50%)]"
+              />
+              <span className={lang.isActive ? "" : "opacity-50"}>{lang.name}</span>
+              <span className="text-muted-foreground text-[10px]">{lang.code}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button size="sm" onClick={onSave} disabled={isPending || !form.name.trim()} data-testid="button-save-group">
+          {isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+          {saveLabel}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel} data-testid="button-cancel-group">
+          <X className="h-3 w-3 mr-1" />Cancel
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (isLoading) return <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />;
+
+  return (
+    <div data-testid="admin-language-groups">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Language Groups</h2>
+        {!isAdding && (
+          <Button size="sm" onClick={() => { setIsAdding(true); setEditingId(null); }} data-testid="button-add-group">
+            <Plus className="h-4 w-4 mr-1" /> Add Group
+          </Button>
+        )}
+      </div>
+
+      <p className="text-xs text-muted-foreground mb-4">
+        Language groups control which languages are available per billing plan. Assign a group to a plan in the Plans tab.
+      </p>
+
+      {isAdding && (
+        <Card className="p-4 mb-4 border-primary/40" data-testid="card-new-group">
+          <p className="text-sm font-semibold mb-3">New Language Group</p>
+          {renderGroupForm(
+            newForm as typeof editForm,
+            setNewForm as (f: typeof editForm) => void,
+            () => createMutation.mutate(newForm),
+            () => { setIsAdding(false); setNewForm({ name: "", description: "", languageIds: [] }); },
+            createMutation.isPending,
+            "Create Group"
+          )}
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        {(groups || []).map((group) => (
+          <Card key={group.id} className="p-4" data-testid={`card-group-${group.id}`}>
+            {editingId === group.id ? (
+              <>
+                <p className="text-sm font-semibold mb-3">Editing: {group.name}</p>
+                {renderGroupForm(
+                  editForm,
+                  setEditForm,
+                  () => updateMutation.mutate({ id: group.id, data: editForm }),
+                  () => setEditingId(null),
+                  updateMutation.isPending
+                )}
+              </>
+            ) : (
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold" data-testid={`text-group-name-${group.id}`}>{group.name}</p>
+                    <Badge variant="secondary" className="text-xs">{group.languages.length} languages</Badge>
+                  </div>
+                  {group.description && <p className="text-xs text-muted-foreground mt-0.5">{group.description}</p>}
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {group.languages.map(l => (
+                      <Badge key={l.id} variant="outline" className="text-xs py-0">{l.name}</Badge>
+                    ))}
+                    {group.languages.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No languages assigned</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <Button size="icon" variant="ghost" className="h-7 w-7"
+                    onClick={() => {
+                      setEditingId(group.id);
+                      setEditForm({ name: group.name, description: group.description || "", languageIds: group.languages.map(l => l.id) });
+                    }}
+                    data-testid={`button-edit-group-${group.id}`}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                    onClick={() => { if (confirm(`Delete group "${group.name}"?`)) deleteMutation.mutate(group.id); }}
+                    data-testid={`button-delete-group-${group.id}`}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        ))}
+        {(!groups || groups.length === 0) && !isAdding && (
+          <Card className="p-6 text-center">
+            <p className="text-sm text-muted-foreground">No language groups yet.</p>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function CommandsTab() {

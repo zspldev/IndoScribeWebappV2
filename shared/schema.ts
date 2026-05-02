@@ -8,8 +8,24 @@ export const languages = pgTable("languages", {
   name: varchar("name", { length: 100 }).notNull(),
   code: varchar("code", { length: 10 }).notNull(),
   script: varchar("script", { length: 50 }).notNull(),
+  scriptFamily: varchar("script_family", { length: 50 }),
+  fontFile: varchar("font_file", { length: 100 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const languageGroups = pgTable("language_groups", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const languageGroupLanguages = pgTable("language_group_languages", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => languageGroups.id, { onDelete: "cascade" }),
+  languageId: integer("language_id").notNull().references(() => languages.id, { onDelete: "cascade" }),
 });
 
 export const plans = pgTable("plans", {
@@ -22,6 +38,7 @@ export const plans = pgTable("plans", {
   isActive: boolean("is_active").notNull().default(true),
   description: text("description"),
   features: jsonb("features").$type<string[]>().default([]),
+  languageGroupId: integer("language_group_id").references(() => languageGroups.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -144,6 +161,17 @@ export const insertLanguageSchema = createInsertSchema(languages).omit({
   createdAt: true,
 });
 
+export const insertLanguageGroupSchema = createInsertSchema(languageGroups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+
+});
+
+export const insertLanguageGroupLanguageSchema = createInsertSchema(languageGroupLanguages).omit({
+  id: true,
+});
+
 export const insertPlanSchema = createInsertSchema(plans).omit({
   id: true,
   createdAt: true,
@@ -192,6 +220,10 @@ export const insertTranscriptionSchema = createInsertSchema(transcriptions).omit
 
 export type InsertLanguage = z.infer<typeof insertLanguageSchema>;
 export type Language = typeof languages.$inferSelect;
+export type InsertLanguageGroup = z.infer<typeof insertLanguageGroupSchema>;
+export type LanguageGroup = typeof languageGroups.$inferSelect;
+export type LanguageGroupLanguage = typeof languageGroupLanguages.$inferSelect;
+export type LanguageGroupWithLanguages = LanguageGroup & { languages: Language[] };
 export type InsertPlan = z.infer<typeof insertPlanSchema>;
 export type Plan = typeof plans.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

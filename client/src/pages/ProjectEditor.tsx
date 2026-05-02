@@ -82,6 +82,7 @@ export default function ProjectEditor() {
   const hasFeature = (key: string) => user?.role === "admin" || (user?.planFeatures ?? []).includes(key);
   const canTranslate = hasFeature("translation");
   const canExportDocx = hasFeature("docx_export");
+  const canExportPdf = hasFeature("pdf_watermark") || hasFeature("pdf_no_watermark");
   const canUseRichText = hasFeature("rich_text_editor");
   const { getLanguageName, getLanguageScript } = useLanguages();
   const params = useParams<{ id: string }>();
@@ -104,6 +105,7 @@ export default function ProjectEditor() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [transliterationEnabled, setTransliterationEnabled] = useState(false);
@@ -527,6 +529,41 @@ export default function ProjectEditor() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!editedText.trim() || isExportingPdf) return;
+    setIsExportingPdf(true);
+    try {
+      let pdfUrl = `/api/projects/${projectId}/pdf?mode=${exportMode}`;
+      if ((exportMode === "translation" || exportMode === "both") && activeTranslationLang) {
+        pdfUrl += `&translationLang=${activeTranslationLang}`;
+      }
+      const response = await fetch(pdfUrl, { credentials: "include" });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({ error: "Download failed" }));
+        throw new Error(errData.error || "Download failed");
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition");
+      let filename = `transcription-${projectId}.pdf`;
+      if (disposition) {
+        const match = disposition.match(/filename="?(.+?)"?$/);
+        if (match) filename = match[1];
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Failed to download PDF");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   if (!user) return null;
 
   if (isLoading) {
@@ -758,7 +795,7 @@ export default function ProjectEditor() {
             <h3 className="text-xs font-medium text-muted-foreground mb-2">Export</h3>
             <Card className="p-3 space-y-2.5" data-testid="card-export">
               {!canExportDocx && (
-                <p className="text-xs text-muted-foreground" data-testid="text-no-export-feature">DOCX export is not available on your current plan.</p>
+                <p className="text-xs text-muted-foreground" data-testid="text-no-export-feature">DOCX export requires Basic plan or higher.</p>
               )}
               {canExportDocx && translations.length > 0 && (
                 <div className="space-y-1.5">
@@ -780,6 +817,9 @@ export default function ProjectEditor() {
                   </div>
                 </div>
               )}
+              {!canExportDocx && !canExportPdf && (
+                <p className="text-xs text-muted-foreground" data-testid="text-no-pdf-feature">Export not available on your plan.</p>
+              )}
               <Button
                 variant="outline"
                 className="w-full"
@@ -794,6 +834,22 @@ export default function ProjectEditor() {
                 )}
                 {isExporting ? "Preparing..." : "Download DOCX"}
               </Button>
+              {canExportPdf && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={!editedText.trim() || isExportingPdf || ((exportMode === "translation" || exportMode === "both") && (!activeTranslationLang || !translations.find(t => t.targetLanguageCode === activeTranslationLang)))}
+                  onClick={handleDownloadPdf}
+                  data-testid="button-export-pdf"
+                >
+                  {isExportingPdf ? (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 mr-1.5" />
+                  )}
+                  {isExportingPdf ? "Preparing PDF..." : "Download PDF"}
+                </Button>
+              )}
             </Card>
           </div>
 

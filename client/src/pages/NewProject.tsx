@@ -191,8 +191,7 @@ export default function NewProject() {
   const canRecord = hasFeature("live_recording");
   const canUseCommands = hasFeature("formatting_commands");
 
-  const langFeatureMap: Record<string, string> = { "en-IN": "english", "hi-IN": "hindi", "mr-IN": "marathi" };
-  const allowedLanguages = (languagesList ?? []).filter(l => hasFeature(langFeatureMap[l.code] ?? l.code));
+  const allowedLanguages = (languagesList ?? []).filter(l => l.isActive);
 
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-new-project">

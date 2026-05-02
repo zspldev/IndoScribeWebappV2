@@ -1,7 +1,7 @@
-import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText } from "@shared/schema";
-import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText } from "@shared/schema";
+import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText, type LanguageGroup, type LanguageGroupWithLanguages } from "@shared/schema";
+import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText, languageGroups, languageGroupLanguages } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getLanguages(): Promise<Language[]>;
@@ -47,6 +47,16 @@ export interface IStorage {
   getTranslationByProjectAndLang(projectId: number, targetLangCode: string): Promise<TranslationText | undefined>;
   createTranslationText(data: { projectId: number; sourceLanguageCode: string; targetLanguageCode: string; translatedContent: string; status: string }): Promise<TranslationText>;
   updateTranslationText(id: number, updates: Partial<TranslationText>): Promise<TranslationText | undefined>;
+
+  getLanguageGroups(): Promise<LanguageGroup[]>;
+  getLanguageGroupById(id: number): Promise<LanguageGroup | undefined>;
+  getAllLanguageGroupsWithLanguages(): Promise<LanguageGroupWithLanguages[]>;
+  getLanguagesByGroupId(groupId: number): Promise<Language[]>;
+  getLanguagesByPlanId(planId: number): Promise<Language[]>;
+  createLanguageGroup(data: { name: string; description?: string }): Promise<LanguageGroup>;
+  updateLanguageGroup(id: number, updates: { name?: string; description?: string }): Promise<LanguageGroup | undefined>;
+  deleteLanguageGroup(id: number): Promise<boolean>;
+  setLanguageGroupLanguages(groupId: number, languageIds: number[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -241,6 +251,66 @@ export class DatabaseStorage implements IStorage {
   async updateTranslationText(id: number, updates: Partial<TranslationText>): Promise<TranslationText | undefined> {
     const [t] = await db.update(translationsText).set({ ...updates, updatedAt: new Date() }).where(eq(translationsText.id, id)).returning();
     return t;
+  }
+
+  async getLanguageGroups(): Promise<LanguageGroup[]> {
+    return db.select().from(languageGroups).orderBy(languageGroups.id);
+  }
+
+  async getLanguageGroupById(id: number): Promise<LanguageGroup | undefined> {
+    const [g] = await db.select().from(languageGroups).where(eq(languageGroups.id, id));
+    return g;
+  }
+
+  async getAllLanguageGroupsWithLanguages(): Promise<LanguageGroupWithLanguages[]> {
+    const groups = await db.select().from(languageGroups).orderBy(languageGroups.id);
+    const result: LanguageGroupWithLanguages[] = [];
+    for (const group of groups) {
+      const langs = await this.getLanguagesByGroupId(group.id);
+      result.push({ ...group, languages: langs });
+    }
+    return result;
+  }
+
+  async getLanguagesByGroupId(groupId: number): Promise<Language[]> {
+    const rows = await db
+      .select({ langId: languageGroupLanguages.languageId })
+      .from(languageGroupLanguages)
+      .where(eq(languageGroupLanguages.groupId, groupId));
+    const ids = rows.map(r => r.langId);
+    if (ids.length === 0) return [];
+    return db.select().from(languages).where(inArray(languages.id, ids)).orderBy(languages.name);
+  }
+
+  async getLanguagesByPlanId(planId: number): Promise<Language[]> {
+    const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
+    if (!plan || !plan.languageGroupId) {
+      return db.select().from(languages).where(eq(languages.isActive, true)).orderBy(languages.name);
+    }
+    const langs = await this.getLanguagesByGroupId(plan.languageGroupId);
+    return langs.filter(l => l.isActive);
+  }
+
+  async createLanguageGroup(data: { name: string; description?: string }): Promise<LanguageGroup> {
+    const [g] = await db.insert(languageGroups).values({ name: data.name, description: data.description ?? null }).returning();
+    return g;
+  }
+
+  async updateLanguageGroup(id: number, updates: { name?: string; description?: string }): Promise<LanguageGroup | undefined> {
+    const [g] = await db.update(languageGroups).set({ ...updates, updatedAt: new Date() }).where(eq(languageGroups.id, id)).returning();
+    return g;
+  }
+
+  async deleteLanguageGroup(id: number): Promise<boolean> {
+    const result = await db.delete(languageGroups).where(eq(languageGroups.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async setLanguageGroupLanguages(groupId: number, languageIds: number[]): Promise<void> {
+    await db.delete(languageGroupLanguages).where(eq(languageGroupLanguages.groupId, groupId));
+    if (languageIds.length > 0) {
+      await db.insert(languageGroupLanguages).values(languageIds.map(lid => ({ groupId, languageId: lid })));
+    }
   }
 }
 

@@ -5,7 +5,10 @@ import { parseBuffer } from "music-metadata";
 import { db } from "./db";
 import { languages, transcriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { Document, Paragraph, TextRun, Packer, PageBreak } from "docx";
+import { Document, Paragraph, TextRun, Packer, PageBreak, Header, AlignmentType } from "docx";
+import { generatePdf } from "./services/PdfExportService";
+import { languageGroups, languageGroupLanguages } from "@shared/schema";
+import { inArray } from "drizzle-orm";
 import { SpeechClient, protos } from "@google-cloud/speech";
 import { applyPreprocessing, splitIntoPages } from "./preprocessing";
 import { getFormattingCommandService, FormattingCommandSchema } from "./services/FormattingCommandService";
@@ -80,17 +83,55 @@ async function userHasFeature(userId: number, featureKey: string): Promise<boole
   return features.includes(featureKey);
 }
 
+function getDocxFontName(scriptFamily?: string | null, script?: string | null): string {
+  const fontMap: Record<string, string> = {
+    devanagari: "Noto Sans Devanagari",
+    bengali: "Noto Sans Bengali",
+    gujarati: "Noto Sans Gujarati",
+    tamil: "Noto Sans Tamil",
+    telugu: "Noto Sans Telugu",
+    kannada: "Noto Sans Kannada",
+    malayalam: "Noto Sans Malayalam",
+    gurmukhi: "Noto Sans Gurmukhi",
+    latin: "Calibri",
+  };
+  if (scriptFamily && fontMap[scriptFamily]) return fontMap[scriptFamily];
+  if (script === "Devanagari") return "Noto Sans Devanagari";
+  return "Calibri";
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get all active languages
+  // Get languages filtered by the authenticated user's plan group
   app.get("/api/languages", async (req, res) => {
     try {
-      const allLanguages = await db
-        .select()
-        .from(languages)
-        .where(eq(languages.isActive, true));
-      res.json(allLanguages);
+      const userId = (req.session as any)?.userId;
+      if (userId) {
+        const user = await storage.getUserById(userId);
+        if (user) {
+          // Admins see all active languages regardless of their own plan
+          if (user.role === "admin") {
+            const allActive = await db.select().from(languages).where(eq(languages.isActive, true)).orderBy(languages.name);
+            return res.json(allActive);
+          }
+          const planId = user.planId || 1;
+          const planLangs = await storage.getLanguagesByPlanId(planId);
+          return res.json(planLangs);
+        }
+      }
+      const allActive = await db.select().from(languages).where(eq(languages.isActive, true)).orderBy(languages.name);
+      res.json(allActive);
     } catch (error) {
       console.error("Error fetching languages:", error);
+      res.status(500).json({ error: "Failed to fetch languages" });
+    }
+  });
+
+  // Get all languages (admin only, unfiltered)
+  app.get("/api/admin/languages", requireAdmin, async (req, res) => {
+    try {
+      const allLangs = await db.select().from(languages).orderBy(languages.name);
+      res.json(allLangs);
+    } catch (error) {
       res.status(500).json({ error: "Failed to fetch languages" });
     }
   });
@@ -1204,7 +1245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const allLangs = await storage.getLanguages();
       const sourceLang = allLangs.find(l => l.code === project.languageCode);
-      const sourceFontName = sourceLang?.script === "Devanagari" ? "Noto Sans Devanagari" : "Calibri";
+      const sourceFontName = getDocxFontName(sourceLang?.scriptFamily, sourceLang?.script);
 
       let translationText = "";
       let targetLang: any = null;
@@ -1216,7 +1257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!tr) return res.status(404).json({ error: "Translation not found for this language" });
         translationText = tr.editedContent || tr.translatedContent || "";
         targetLang = allLangs.find(l => l.code === translationLang);
-        targetFontName = targetLang?.script === "Devanagari" ? "Noto Sans Devanagari" : "Calibri";
+        targetFontName = getDocxFontName(targetLang?.scriptFamily, targetLang?.script);
       }
 
       const children: Paragraph[] = [];
@@ -1260,7 +1301,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         addTextSection(translationText, targetFontName, mode === "both" ? `Translation (${langLabel})` : undefined);
       }
 
-      const doc = new Document({ sections: [{ properties: {}, children }] });
+      const addDocxWatermark = await userHasFeature(userId, "docx_watermark");
+      const watermarkHeader = addDocxWatermark ? new Header({
+        children: [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: "Created by IndoScribe", color: "BBBBBB", size: 20, italics: true })],
+        })],
+      }) : undefined;
+
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          headers: watermarkHeader ? { default: watermarkHeader } : undefined,
+          children,
+        }],
+      });
       const buffer = await Packer.toBuffer(doc);
       const timestamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
       const suffix = mode === "both" ? "-bilingual" : mode === "translation" ? `-${translationLang}` : "";
@@ -1277,6 +1332,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("DOCX export error:", error);
       res.status(500).json({ error: "Failed to generate document" });
+    }
+  });
+
+  // ============ PDF Export Route ============
+
+  app.get("/api/projects/:id/pdf", requireAuth, async (req, res) => {
+    req.setTimeout(300000);
+    res.setTimeout(300000);
+    try {
+      const userId = (req.session as any).userId;
+      const project = await storage.getProjectById(parseInt(req.params.id));
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      if (project.userId !== userId) {
+        const u = await storage.getUserById(userId);
+        if (u?.role !== "admin") return res.status(403).json({ error: "Access denied" });
+      }
+
+      const hasPdfWatermark = await userHasFeature(userId, "pdf_watermark");
+      const hasPdfClean = await userHasFeature(userId, "pdf_no_watermark");
+      if (!hasPdfWatermark && !hasPdfClean) {
+        return res.status(403).json({ error: "PDF export is not available on your current plan." });
+      }
+
+      const mode = (req.query.mode as string) || "source";
+      const translationLang = req.query.translationLang as string;
+      const sourceText = project.editedContent || project.formattedTranscript || project.rawTranscript || "";
+      if (!sourceText && mode === "source") return res.status(400).json({ error: "No text to export" });
+
+      const allLangs = await storage.getLanguages();
+      const sourceLang = allLangs.find(l => l.code === project.languageCode);
+
+      let exportText = sourceText;
+      let fontFile = sourceLang?.fontFile ?? null;
+
+      if (mode === "translation") {
+        if (!translationLang) return res.status(400).json({ error: "Translation language required" });
+        const tr = await storage.getTranslationByProjectAndLang(project.id, translationLang);
+        if (!tr) return res.status(404).json({ error: "Translation not found" });
+        exportText = tr.editedContent || tr.translatedContent || "";
+        const tLang = allLangs.find(l => l.code === translationLang);
+        fontFile = tLang?.fontFile ?? null;
+      } else if (mode === "both") {
+        let targetText = "";
+        if (translationLang) {
+          const tr = await storage.getTranslationByProjectAndLang(project.id, translationLang);
+          if (tr) targetText = tr.editedContent || tr.translatedContent || "";
+        }
+        exportText = `${sourceText}\n\n---PAGE BREAK---\n\n${targetText}`;
+      }
+
+      const addWatermark = hasPdfWatermark && !hasPdfClean;
+      const pdfBuffer = await generatePdf(exportText, fontFile, addWatermark);
+
+      const timestamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
+      const suffix = mode === "both" ? "-bilingual" : mode === "translation" ? `-${translationLang}` : "";
+      const filename = `${project.title.replace(/[^a-zA-Z0-9]/g, "_")}${suffix}-${timestamp}.pdf`;
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(pdfBuffer);
+
+      await storage.updateProject(project.id, { exportedAt: new Date(), status: "completed" });
+    } catch (error) {
+      console.error("PDF export error:", error);
+      res.status(500).json({ error: "Failed to generate PDF" });
     }
   });
 
@@ -1371,6 +1491,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to save setting" });
+    }
+  });
+
+  // ============ Admin Language Group Routes ============
+
+  app.get("/api/admin/language-groups", requireAdmin, async (req, res) => {
+    try {
+      const groups = await storage.getAllLanguageGroupsWithLanguages();
+      res.json(groups);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch language groups" });
+    }
+  });
+
+  app.post("/api/admin/language-groups", requireAdmin, async (req, res) => {
+    try {
+      const { name, description, languageIds } = req.body;
+      if (!name) return res.status(400).json({ error: "Name is required" });
+      const group = await storage.createLanguageGroup({ name, description });
+      if (languageIds && languageIds.length > 0) {
+        await storage.setLanguageGroupLanguages(group.id, languageIds);
+      }
+      const withLangs = await storage.getAllLanguageGroupsWithLanguages();
+      res.json(withLangs.find(g => g.id === group.id) || group);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create language group" });
+    }
+  });
+
+  app.put("/api/admin/language-groups/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, description, languageIds } = req.body;
+      const updated = await storage.updateLanguageGroup(id, { name, description });
+      if (!updated) return res.status(404).json({ error: "Language group not found" });
+      if (languageIds !== undefined) {
+        await storage.setLanguageGroupLanguages(id, languageIds);
+      }
+      const withLangs = await storage.getAllLanguageGroupsWithLanguages();
+      res.json(withLangs.find(g => g.id === id) || updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update language group" });
+    }
+  });
+
+  app.delete("/api/admin/language-groups/:id", requireAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deleteLanguageGroup(parseInt(req.params.id));
+      if (!deleted) return res.status(404).json({ error: "Language group not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete language group" });
     }
   });
 
