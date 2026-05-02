@@ -446,12 +446,12 @@ function PlansTab() {
         </div>
         <div className="col-span-2">
           <label className="text-xs text-muted-foreground">Language Group</label>
-          <Select value={String(form.languageGroupId || "")} onValueChange={v => setForm({ ...form, languageGroupId: v === "" ? "" : parseInt(v) })}>
+          <Select value={String(form.languageGroupId || "none")} onValueChange={v => setForm({ ...form, languageGroupId: v === "none" ? "" : parseInt(v) })}>
             <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-plan-language-group">
               <SelectValue placeholder="No language group" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No group (show all active)</SelectItem>
+              <SelectItem value="none">No group (show all active)</SelectItem>
               {(allLanguageGroups || []).map(g => (
                 <SelectItem key={g.id} value={String(g.id)}>{g.name} ({g.languages.length} languages)</SelectItem>
               ))}
