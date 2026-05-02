@@ -209,9 +209,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPlan(userId: number, planId: number): Promise<void> {
-    await db.update(users)
-      .set({ planId, updatedAt: new Date() })
-      .where(eq(users.id, userId));
+    await db.execute(sql`UPDATE users SET plan_id = ${planId}, updated_at = NOW() WHERE id = ${userId}`);
   }
 
   async createPlan(data: Partial<Plan>): Promise<Plan> {
