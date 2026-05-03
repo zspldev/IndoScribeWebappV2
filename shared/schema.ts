@@ -128,6 +128,30 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body").notNull(),
+  ctaLabel: varchar("cta_label", { length: 100 }),
+  ctaUrl: varchar("cta_url", { length: 500 }),
+  targetType: varchar("target_type", { length: 20 }).notNull().default("all"),
+  targetId: integer("target_id"),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const announcementDismissals = pgTable("announcement_dismissals", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  announcementId: integer("announcement_id").notNull().references(() => announcements.id, { onDelete: "cascade" }),
+  dismissedAt: timestamp("dismissed_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("uq_dismissals_user_announcement").on(table.userId, table.announcementId),
+]);
+
 export const translationsText = pgTable("translations_text", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").notNull().references(() => projects.id),
@@ -244,3 +268,5 @@ export type ProviderConfig = typeof providerConfig.$inferSelect;
 export type FormattingCommandDb = typeof formattingCommandsDb.$inferSelect;
 export type UsageLogEntry = typeof usageLog.$inferSelect;
 export type SystemSetting = typeof systemSettings.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
+export type AnnouncementDismissal = typeof announcementDismissals.$inferSelect;

@@ -33,7 +33,10 @@ import {
   Search,
   Globe,
   CheckSquare,
+  Bell,
+  Megaphone,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguages } from "@/lib/useLanguages";
 import AppLogo from "@/components/AppLogo";
@@ -85,7 +88,20 @@ interface Stats {
   totalCostInr: number;
 }
 
-type Tab = "overview" | "users" | "plans" | "language-groups" | "commands" | "providers" | "settings";
+interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  targetType: string;
+  targetId: number | null;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+type Tab = "overview" | "users" | "plans" | "language-groups" | "announcements" | "commands" | "providers" | "settings";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -120,6 +136,7 @@ export default function AdminDashboard() {
             { id: "users" as Tab, label: "Users", icon: Users },
             { id: "plans" as Tab, label: "Plans", icon: CreditCard },
             { id: "language-groups" as Tab, label: "Lang Groups", icon: Globe },
+            { id: "announcements" as Tab, label: "Announce", icon: Bell },
             { id: "commands" as Tab, label: "Commands", icon: FileText },
             { id: "providers" as Tab, label: "Providers", icon: Mic },
             { id: "settings" as Tab, label: "Settings", icon: Settings },
@@ -142,6 +159,7 @@ export default function AdminDashboard() {
           {activeTab === "users" && <UsersTab />}
           {activeTab === "plans" && <PlansTab />}
           {activeTab === "language-groups" && <LanguageGroupsTab />}
+          {activeTab === "announcements" && <AnnouncementsTab />}
           {activeTab === "commands" && <CommandsTab />}
           {activeTab === "providers" && <ProvidersTab />}
           {activeTab === "settings" && <SettingsTab />}
@@ -1034,6 +1052,319 @@ function ProvidersTab() {
             No provider configurations yet. The system uses Sarvam AI by default.
           </p>
         </Card>
+      )}
+    </div>
+  );
+}
+
+function AnnouncementsTab() {
+  const { data: allAnnouncements = [], isLoading } = useQuery<Announcement[]>({
+    queryKey: ["/api/admin/announcements"],
+  });
+  const { data: allPlans = [] } = useQuery<Plan[]>({ queryKey: ["/api/plans"] });
+  const { data: allUsers = [] } = useQuery<AdminUser[]>({ queryKey: ["/api/admin/users"] });
+
+  const emptyForm = { title: "", body: "", ctaLabel: "", ctaUrl: "", targetType: "all", targetId: "" as string | number, isActive: true, expiresAt: "" };
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState({ ...emptyForm });
+  const [editForm, setEditForm] = useState({ ...emptyForm });
+
+  const createMutation = useMutation({
+    mutationFn: (data: typeof emptyForm) => apiRequest("POST", "/api/admin/announcements", {
+      ...data,
+      ctaLabel: data.ctaLabel || null,
+      ctaUrl: data.ctaUrl || null,
+      targetId: data.targetId === "" ? null : Number(data.targetId),
+      expiresAt: data.expiresAt || null,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setIsAdding(false);
+      setForm({ ...emptyForm });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: typeof emptyForm }) =>
+      apiRequest("PUT", `/api/admin/announcements/${id}`, {
+        ...data,
+        ctaLabel: data.ctaLabel || null,
+        ctaUrl: data.ctaUrl || null,
+        targetId: data.targetId === "" ? null : Number(data.targetId),
+        expiresAt: data.expiresAt || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setEditingId(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/announcements/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] }),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      apiRequest("PUT", `/api/admin/announcements/${id}`, { isActive }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] }),
+  });
+
+  const startEdit = (ann: Announcement) => {
+    setEditingId(ann.id);
+    setIsAdding(false);
+    setEditForm({
+      title: ann.title,
+      body: ann.body,
+      ctaLabel: ann.ctaLabel || "",
+      ctaUrl: ann.ctaUrl || "",
+      targetType: ann.targetType,
+      targetId: ann.targetId ?? "",
+      isActive: ann.isActive,
+      expiresAt: ann.expiresAt ? ann.expiresAt.slice(0, 10) : "",
+    });
+  };
+
+  const getTargetLabel = (ann: Announcement) => {
+    if (ann.targetType === "all") return "All Users";
+    if (ann.targetType === "plan") {
+      const plan = allPlans.find((p) => p.id === ann.targetId);
+      return `Plan: ${plan?.planName || ann.targetId}`;
+    }
+    if (ann.targetType === "user") {
+      const u = allUsers.find((u) => u.id === ann.targetId);
+      return `User: ${u?.fullName || `#${ann.targetId}`}`;
+    }
+    return ann.targetType;
+  };
+
+  const renderForm = (
+    f: typeof emptyForm,
+    setF: (v: typeof emptyForm) => void,
+    onSave: () => void,
+    onCancel: () => void,
+    isPending: boolean,
+    saveLabel = "Publish"
+  ) => (
+    <div className="space-y-3">
+      <div>
+        <label className="text-xs text-muted-foreground">Title *</label>
+        <input
+          value={f.title}
+          onChange={(e) => setF({ ...f, title: e.target.value })}
+          placeholder="Announcement title"
+          className="mt-1 w-full h-8 px-3 text-sm border rounded-md bg-background"
+          data-testid="input-ann-title"
+        />
+      </div>
+      <div>
+        <label className="text-xs text-muted-foreground">Message *</label>
+        <Textarea
+          value={f.body}
+          onChange={(e) => setF({ ...f, body: e.target.value })}
+          placeholder="Write your message here..."
+          className="mt-1 text-sm min-h-[80px]"
+          data-testid="input-ann-body"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground">Target Audience</label>
+          <Select value={f.targetType} onValueChange={(v) => setF({ ...f, targetType: v, targetId: "" })}>
+            <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-ann-target-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="plan">By Plan</SelectItem>
+              <SelectItem value="user">Specific User</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {f.targetType === "plan" && (
+          <div>
+            <label className="text-xs text-muted-foreground">Plan</label>
+            <Select value={String(f.targetId || "")} onValueChange={(v) => setF({ ...f, targetId: v })}>
+              <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-ann-plan">
+                <SelectValue placeholder="Select plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {allPlans.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>{p.planName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {f.targetType === "user" && (
+          <div>
+            <label className="text-xs text-muted-foreground">User</label>
+            <Select value={String(f.targetId || "")} onValueChange={(v) => setF({ ...f, targetId: v })}>
+              <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-ann-user">
+                <SelectValue placeholder="Select user" />
+              </SelectTrigger>
+              <SelectContent>
+                {allUsers.filter((u) => u.role !== "admin").map((u) => (
+                  <SelectItem key={u.id} value={String(u.id)}>
+                    {u.fullName} ({u.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground">CTA Button Label</label>
+          <input
+            value={f.ctaLabel}
+            onChange={(e) => setF({ ...f, ctaLabel: e.target.value })}
+            placeholder="e.g. Learn more"
+            className="mt-1 w-full h-8 px-3 text-sm border rounded-md bg-background"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">CTA URL</label>
+          <input
+            value={f.ctaUrl}
+            onChange={(e) => setF({ ...f, ctaUrl: e.target.value })}
+            placeholder="https://..."
+            className="mt-1 w-full h-8 px-3 text-sm border rounded-md bg-background"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground">Expires On (optional)</label>
+          <input
+            type="date"
+            value={f.expiresAt}
+            onChange={(e) => setF({ ...f, expiresAt: e.target.value })}
+            className="mt-1 w-full h-8 px-3 text-sm border rounded-md bg-background"
+          />
+        </div>
+        <div className="flex items-end gap-2 pb-0.5">
+          <Switch checked={f.isActive} onCheckedChange={(v) => setF({ ...f, isActive: v })} />
+          <span className="text-sm">{f.isActive ? "Active" : "Inactive"}</span>
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button
+          size="sm"
+          onClick={onSave}
+          disabled={isPending || !f.title.trim() || !f.body.trim()}
+          data-testid="button-save-announcement"
+        >
+          {isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+          {saveLabel}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          <X className="h-3 w-3 mr-1" />Cancel
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div data-testid="admin-announcements">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Announcements</h2>
+        {!isAdding && (
+          <Button size="sm" onClick={() => { setIsAdding(true); setEditingId(null); }} data-testid="button-add-announcement">
+            <Plus className="h-4 w-4 mr-1" /> New Announcement
+          </Button>
+        )}
+      </div>
+
+      {isAdding && (
+        <Card className="p-4 mb-4 border-primary/40" data-testid="card-new-announcement">
+          <p className="text-sm font-semibold mb-3">New Announcement</p>
+          {renderForm(
+            form,
+            setForm,
+            () => createMutation.mutate(form),
+            () => { setIsAdding(false); setForm({ ...emptyForm }); },
+            createMutation.isPending,
+            "Publish"
+          )}
+        </Card>
+      )}
+
+      {allAnnouncements.length === 0 && !isAdding ? (
+        <Card className="p-10 text-center">
+          <Megaphone className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No announcements yet. Create one to notify your users.</p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {allAnnouncements.map((ann) => (
+            <Card key={ann.id} className="p-4" data-testid={`card-announcement-${ann.id}`}>
+              {editingId === ann.id ? (
+                <>
+                  <p className="text-sm font-semibold mb-3">Editing announcement</p>
+                  {renderForm(
+                    editForm,
+                    setEditForm,
+                    () => updateMutation.mutate({ id: ann.id, data: editForm }),
+                    () => setEditingId(null),
+                    updateMutation.isPending,
+                    "Save Changes"
+                  )}
+                </>
+              ) : (
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <p className="text-sm font-semibold">{ann.title}</p>
+                      <Badge variant={ann.isActive ? "secondary" : "outline"} className="text-xs">
+                        {ann.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">{getTargetLabel(ann)}</Badge>
+                      {ann.expiresAt && (
+                        <Badge variant="outline" className="text-xs text-muted-foreground">
+                          Expires {new Date(ann.expiresAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{ann.body}</p>
+                    {ann.ctaLabel && (
+                      <p className="text-xs text-[#FF9933] mt-1">CTA: {ann.ctaLabel} → {ann.ctaUrl}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground/50 mt-1.5">
+                      Created {new Date(ann.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">Active</span>
+                      <Switch
+                        checked={ann.isActive}
+                        onCheckedChange={(v) => toggleMutation.mutate({ id: ann.id, isActive: v })}
+                        data-testid={`switch-ann-active-${ann.id}`}
+                      />
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(ann)} data-testid={`button-edit-ann-${ann.id}`}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => deleteMutation.mutate(ann.id)}
+                      data-testid={`button-delete-ann-${ann.id}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

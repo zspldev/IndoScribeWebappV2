@@ -1,5 +1,5 @@
-import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText, type LanguageGroup, type LanguageGroupWithLanguages } from "@shared/schema";
-import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText, languageGroups, languageGroupLanguages } from "@shared/schema";
+import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText, type LanguageGroup, type LanguageGroupWithLanguages, type Announcement } from "@shared/schema";
+import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText, languageGroups, languageGroupLanguages, announcements, announcementDismissals } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
 
@@ -58,6 +58,13 @@ export interface IStorage {
   updateLanguageGroup(id: number, updates: { name?: string; description?: string }): Promise<LanguageGroup | undefined>;
   deleteLanguageGroup(id: number): Promise<boolean>;
   setLanguageGroupLanguages(groupId: number, languageIds: number[]): Promise<void>;
+
+  getAnnouncementsForUser(userId: number, planId: number): Promise<Announcement[]>;
+  dismissAnnouncement(userId: number, announcementId: number): Promise<void>;
+  getAllAnnouncements(): Promise<Announcement[]>;
+  createAnnouncement(data: Partial<Announcement>): Promise<Announcement>;
+  updateAnnouncement(id: number, updates: Partial<Announcement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -316,6 +323,55 @@ export class DatabaseStorage implements IStorage {
     if (languageIds.length > 0) {
       await db.insert(languageGroupLanguages).values(languageIds.map(lid => ({ groupId, languageId: lid })));
     }
+  }
+
+  async getAnnouncementsForUser(userId: number, planId: number): Promise<Announcement[]> {
+    const result = await db.execute(sql`
+      SELECT a.* FROM announcements a
+      WHERE a.is_active = true
+        AND (a.expires_at IS NULL OR a.expires_at > NOW())
+        AND (
+          a.target_type = 'all'
+          OR (a.target_type = 'plan' AND a.target_id = ${planId})
+          OR (a.target_type = 'user' AND a.target_id = ${userId})
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM announcement_dismissals d
+          WHERE d.announcement_id = a.id AND d.user_id = ${userId}
+        )
+      ORDER BY a.created_at DESC
+    `);
+    return result.rows as Announcement[];
+  }
+
+  async dismissAnnouncement(userId: number, announcementId: number): Promise<void> {
+    await db.execute(sql`
+      INSERT INTO announcement_dismissals (user_id, announcement_id)
+      VALUES (${userId}, ${announcementId})
+      ON CONFLICT (user_id, announcement_id) DO NOTHING
+    `);
+  }
+
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return db.select().from(announcements).orderBy(desc(announcements.createdAt)) as Promise<Announcement[]>;
+  }
+
+  async createAnnouncement(data: Partial<Announcement>): Promise<Announcement> {
+    const [a] = await db.insert(announcements).values(data as any).returning();
+    return a;
+  }
+
+  async updateAnnouncement(id: number, updates: Partial<Announcement>): Promise<Announcement | undefined> {
+    const [a] = await db.update(announcements)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(announcements.id, id))
+      .returning();
+    return a;
+  }
+
+  async deleteAnnouncement(id: number): Promise<boolean> {
+    const result = await db.delete(announcements).where(eq(announcements.id, id)).returning();
+    return result.length > 0;
   }
 }
 

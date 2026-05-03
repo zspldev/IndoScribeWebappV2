@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, FileText, Clock, FolderOpen, LogOut, Loader2, AlertTriangle, Mail, CalendarClock } from "lucide-react";
+import { Plus, FileText, Clock, FolderOpen, LogOut, Loader2, AlertTriangle, Mail, CalendarClock, X } from "lucide-react";
 import { useLanguages } from "@/lib/useLanguages";
 import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface Project {
   id: number;
@@ -25,6 +26,19 @@ interface Project {
   status: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  targetType: string;
+  targetId: number | null;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
 }
 
 export default function Dashboard() {
@@ -42,6 +56,15 @@ export default function Dashboard() {
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
     refetchOnMount: "always",
+  });
+
+  const { data: announcements = [] } = useQuery<Announcement[]>({
+    queryKey: ["/api/announcements"],
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("POST", `/api/announcements/${id}/dismiss`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/announcements"] }),
   });
 
   const minutesUsed = parseFloat(user?.totalMinutesTranscribed || "0");
@@ -114,6 +137,43 @@ export default function Dashboard() {
           <LogOut className="h-4 w-4" />
         </Button>
       </nav>
+
+      {/* Announcement banners */}
+      {announcements.length > 0 && (
+        <div className="border-b bg-amber-50 dark:bg-amber-950/20" data-testid="section-announcements">
+          <div className="max-w-5xl mx-auto px-6 divide-y divide-amber-200/60 dark:divide-amber-800/40">
+            {announcements.map((ann) => (
+              <div key={ann.id} className="py-3 flex gap-3 items-start" data-testid={`announcement-${ann.id}`}>
+                <div className="w-0.5 self-stretch rounded-full bg-[#FF9933] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">{ann.title}</p>
+                  <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">{ann.body}</p>
+                  {ann.ctaLabel && ann.ctaUrl && (
+                    <a
+                      href={ann.ctaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-1.5 text-xs font-medium text-[#FF9933] hover:underline"
+                      data-testid={`link-ann-cta-${ann.id}`}
+                    >
+                      {ann.ctaLabel} →
+                    </a>
+                  )}
+                </div>
+                <button
+                  onClick={() => dismissMutation.mutate(ann.id)}
+                  disabled={dismissMutation.isPending}
+                  className="flex-shrink-0 p-1 rounded text-amber-500 hover:text-amber-800 hover:bg-amber-200/60 transition-colors"
+                  data-testid={`button-dismiss-${ann.id}`}
+                  title="Dismiss"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">

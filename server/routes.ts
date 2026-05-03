@@ -787,6 +787,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ Project API Routes ============
 
+  // User-facing announcements (active, non-dismissed, matching target)
+  app.get("/api/announcements", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUserById(userId);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+      const items = await storage.getAnnouncementsForUser(userId, user.planId || 1);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ error: "Failed to fetch announcements" });
+    }
+  });
+
+  app.post("/api/announcements/:id/dismiss", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      await storage.dismissAnnouncement(userId, parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error dismissing announcement:", error);
+      res.status(500).json({ error: "Failed to dismiss announcement" });
+    }
+  });
+
   app.get("/api/projects", requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any).userId;
@@ -1527,6 +1552,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user:", error);
       res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Admin: announcement CRUD
+  app.get("/api/admin/announcements", requireAdmin, async (req, res) => {
+    try {
+      const items = await storage.getAllAnnouncements();
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch announcements" });
+    }
+  });
+
+  app.post("/api/admin/announcements", requireAdmin, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const item = await storage.createAnnouncement({ ...req.body, createdBy: userId });
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create announcement" });
+    }
+  });
+
+  app.put("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
+    try {
+      const item = await storage.updateAnnouncement(parseInt(req.params.id), req.body);
+      if (!item) return res.status(404).json({ error: "Announcement not found" });
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update announcement" });
+    }
+  });
+
+  app.delete("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deleteAnnouncement(parseInt(req.params.id));
+      if (!deleted) return res.status(404).json({ error: "Announcement not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete announcement" });
     }
   });
 
