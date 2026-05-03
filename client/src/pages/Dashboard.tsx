@@ -140,20 +140,20 @@ export default function Dashboard() {
 
       {/* Announcement banners */}
       {announcements.length > 0 && (
-        <div className="border-b bg-amber-50 dark:bg-amber-950/20" data-testid="section-announcements">
-          <div className="max-w-5xl mx-auto px-6 divide-y divide-amber-200/60 dark:divide-amber-800/40">
+        <div className="border-b border-t border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/40" data-testid="section-announcements">
+          <div className="max-w-5xl mx-auto px-6 divide-y divide-amber-300 dark:divide-amber-700/60">
             {announcements.map((ann) => (
               <div key={ann.id} className="py-3 flex gap-3 items-start" data-testid={`announcement-${ann.id}`}>
-                <div className="w-0.5 self-stretch rounded-full bg-[#FF9933] flex-shrink-0" />
+                <div className="w-1 self-stretch rounded-full bg-[#FF9933] flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">{ann.title}</p>
-                  <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">{ann.body}</p>
+                  <p className="text-sm font-bold text-amber-950 dark:text-amber-50">{ann.title}</p>
+                  <p className="text-xs text-amber-900 dark:text-amber-200 mt-0.5 leading-relaxed">{ann.body}</p>
                   {ann.ctaLabel && ann.ctaUrl && (
                     <a
                       href={ann.ctaUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-1.5 text-xs font-medium text-[#FF9933] hover:underline"
+                      className="inline-block mt-1.5 text-xs font-semibold text-[#d97706] dark:text-[#FF9933] hover:underline"
                       data-testid={`link-ann-cta-${ann.id}`}
                     >
                       {ann.ctaLabel} →
@@ -163,7 +163,7 @@ export default function Dashboard() {
                 <button
                   onClick={() => dismissMutation.mutate(ann.id)}
                   disabled={dismissMutation.isPending}
-                  className="flex-shrink-0 p-1 rounded text-amber-500 hover:text-amber-800 hover:bg-amber-200/60 transition-colors"
+                  className="flex-shrink-0 p-1 rounded text-amber-700 hover:text-amber-950 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
                   data-testid={`button-dismiss-${ann.id}`}
                   title="Dismiss"
                 >
