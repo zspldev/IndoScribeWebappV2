@@ -1,7 +1,7 @@
 import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText, type LanguageGroup, type LanguageGroupWithLanguages, type Announcement } from "@shared/schema";
 import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText, languageGroups, languageGroupLanguages, announcements, announcementDismissals } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, or, isNull, gt } from "drizzle-orm";
 
 export interface IStorage {
   getLanguages(): Promise<Language[]>;
@@ -326,30 +326,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAnnouncementsForUser(userId: number, planId: number): Promise<Announcement[]> {
-    const result = await db.execute(sql`
-      SELECT a.* FROM announcements a
-      WHERE a.is_active = true
-        AND (a.expires_at IS NULL OR a.expires_at > NOW())
-        AND (
-          a.target_type = 'all'
-          OR (a.target_type = 'plan' AND a.target_id = ${planId})
-          OR (a.target_type = 'user' AND a.target_id = ${userId})
+    const now = new Date();
+    const all = await db.select().from(announcements).where(
+      and(
+        eq(announcements.isActive, true),
+        or(isNull(announcements.expiresAt), gt(announcements.expiresAt, now)),
+        or(
+          eq(announcements.targetType, 'all'),
+          and(eq(announcements.targetType, 'plan'), eq(announcements.targetId, planId)),
+          and(eq(announcements.targetType, 'user'), eq(announcements.targetId, userId))
         )
-        AND NOT EXISTS (
-          SELECT 1 FROM announcement_dismissals d
-          WHERE d.announcement_id = a.id AND d.user_id = ${userId}
+      )
+    ).orderBy(desc(announcements.createdAt));
+
+    if (all.length === 0) return [];
+
+    const dismissals = await db.select({ announcementId: announcementDismissals.announcementId })
+      .from(announcementDismissals)
+      .where(
+        and(
+          eq(announcementDismissals.userId, userId),
+          inArray(announcementDismissals.announcementId, all.map(a => a.id))
         )
-      ORDER BY a.created_at DESC
-    `);
-    return result.rows as Announcement[];
+      );
+    const dismissedIds = new Set(dismissals.map(d => d.announcementId));
+    return all.filter(a => !dismissedIds.has(a.id));
   }
 
   async dismissAnnouncement(userId: number, announcementId: number): Promise<void> {
-    await db.execute(sql`
-      INSERT INTO announcement_dismissals (user_id, announcement_id)
-      VALUES (${userId}, ${announcementId})
-      ON CONFLICT (user_id, announcement_id) DO NOTHING
-    `);
+    await db.insert(announcementDismissals)
+      .values({ userId, announcementId })
+      .onConflictDoNothing();
   }
 
   async getAllAnnouncements(): Promise<Announcement[]> {
