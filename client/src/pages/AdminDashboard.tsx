@@ -54,6 +54,7 @@ interface AdminUser {
   totalProjectsCompleted: number;
   totalMinutesTranscribed: string;
   minutesRemaining: number;
+  totalCostInr: number;
   createdAt: string;
 }
 
@@ -243,6 +244,12 @@ function UsersTab() {
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5" data-testid={`text-user-stats-${u.id}`}>
                   Projects: {u.totalProjectsCompleted} | Minutes: {parseFloat(u.totalMinutesTranscribed || "0").toFixed(1)} / {u.totalMinutes} | Remaining: {u.minutesRemaining.toFixed(1)}
+                </p>
+                <p className="text-xs mt-1" data-testid={`text-user-cost-${u.id}`}>
+                  <span className="text-muted-foreground">API Cost: </span>
+                  <span className={u.totalCostInr > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground"}>
+                    ₹{(u.totalCostInr || 0).toFixed(4)}
+                  </span>
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">

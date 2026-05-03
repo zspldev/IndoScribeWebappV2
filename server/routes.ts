@@ -1482,6 +1482,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allPlans = await storage.getPlans();
       const planMap = new Map(allPlans.map(p => [p.id, p]));
 
+      // Sum cost_inr from usage_log per user in a single query
+      const costRows = await db.execute(sql`
+        SELECT user_id, COALESCE(SUM(cost_inr), 0)::numeric AS total_cost_inr
+        FROM usage_log
+        GROUP BY user_id
+      `);
+      const costMap = new Map<number, number>(
+        (costRows.rows as any[]).map(r => [r.user_id as number, parseFloat(r.total_cost_inr) || 0])
+      );
+
       res.json(allUsers.map(u => {
         const plan = planMap.get(u.planId || 1);
         return {
@@ -1499,6 +1509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalProjectsCompleted: u.totalProjectsCompleted,
           totalMinutesTranscribed: u.totalMinutesTranscribed,
           minutesRemaining: Math.max(0, (plan?.totalMinutes || 0) - parseFloat(u.totalMinutesTranscribed || "0")),
+          totalCostInr: costMap.get(u.id) ?? 0,
           createdAt: u.createdAt,
         };
       }));
