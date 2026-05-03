@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 
 export default function Register() {
@@ -66,7 +66,7 @@ export default function Register() {
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-register">
       <nav className="h-14 border-b flex items-center px-6 gap-4 bg-card">
         <button onClick={() => setLocation("/")} className="flex items-center gap-2" data-testid="link-home">
-          <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
+          <AppLogo className="text-xl" />
         </button>
         <div className="flex-1" />
         <HowItWorks />

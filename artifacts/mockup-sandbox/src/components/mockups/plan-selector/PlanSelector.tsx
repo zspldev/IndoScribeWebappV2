@@ -78,7 +78,7 @@ export function PlanSelector() {
           <div className="w-8 h-8 rounded-lg bg-[#4b1fa8] flex items-center justify-center">
             <span className="text-white text-xs font-bold">IS</span>
           </div>
-          <span className="font-semibold text-[#1a1d27] text-sm">IndoScribe Pro</span>
+          <span className="font-semibold text-[#1a1d27] text-sm">IndoScribe</span>
         </div>
         <div className="flex-1" />
         {/* Step indicator */}

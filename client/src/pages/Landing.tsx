@@ -14,8 +14,8 @@ import {
   Languages,
   ShieldCheck,
 } from "lucide-react";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
 import zapurzaaLogo from "@/assets/images/Zapurzaa-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 
 const whyFeatures = [
@@ -78,7 +78,7 @@ export default function Landing() {
         <div className="w-full max-w-5xl flex flex-col md:flex-row items-center gap-8 md:gap-12">
           <div className="flex-1 flex flex-col items-center text-center max-w-lg">
             <div className="flex flex-col items-center mb-6">
-              <img src={combinedLogo} alt="IndoScribe Pro" className="h-16 md:h-20 mb-4" data-testid="img-hero-logo" />
+              <AppLogo className="text-5xl md:text-6xl mb-4" data-testid="img-hero-logo" />
               <span className="text-sm font-semibold text-muted-foreground tracking-wide mb-1">Created by</span>
               <img src={zapurzaaLogo} alt="Zapurzaa Systems" className="h-6" data-testid="img-zapurzaa-logo" />
             </div>
@@ -160,7 +160,7 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="text-center mb-10">
             <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2" data-testid="text-why-title">
-              Why IndoScribe Pro?
+              Why IndoScribe?
             </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto" data-testid="text-why-subtitle">
               India's most complete voice-to-document platform for Indic languages.

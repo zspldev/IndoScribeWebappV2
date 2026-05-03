@@ -1,6 +1,6 @@
-# IndoScribe Pro V2 — Feature & Change Log
+# IndoScribe V2 — Feature & Change Log
 
-This document tracks all new features, architectural changes, and improvements introduced in V2 of the IndoScribe Pro web application. V2 is built on top of the V1 codebase with significant structural and feature changes.
+This document tracks all new features, architectural changes, and improvements introduced in V2 of the IndoScribe web application. V2 is built on top of the V1 codebase with significant structural and feature changes.
 
 ---
 

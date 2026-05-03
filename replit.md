@@ -1,7 +1,7 @@
-# IndoScribe Pro - Professional Audio Transcription Application
+# IndoScribe - Professional Audio Transcription Application
 
 ## Overview
-IndoScribe Pro is a professional web-based audio transcription application specializing in Indian languages (English, Hindi, Marathi). It aims to provide a comprehensive solution for audio-to-text conversion with advanced editing and translation capabilities. Key features include user authentication, role-based access (Admin/User), a plan-based billing system with minutes tracking (including a Starter plan with 120 free minutes) and a 14-day trial period from registration, a rich text editor with 109 language-specific formatting commands, and DOCX export with Devanagari support. The application emphasizes a project-based workflow and leverages AI for transcription and translation, focusing on accuracy and user experience.
+IndoScribe is a professional web-based audio transcription application specializing in Indian languages (English, Hindi, Marathi). It aims to provide a comprehensive solution for audio-to-text conversion with advanced editing and translation capabilities. Key features include user authentication, role-based access (Admin/User), a plan-based billing system with minutes tracking (including a Starter plan with 120 free minutes) and a 14-day trial period from registration, a rich text editor with 109 language-specific formatting commands, and DOCX export with Devanagari support. The application emphasizes a project-based workflow and leverages AI for transcription and translation, focusing on accuracy and user experience.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -14,7 +14,7 @@ The frontend is built with React 18+ (TypeScript), Vite, Wouter for routing, sha
 **Key Features:**
 - **User Interface:** React components, shadcn/ui, Tailwind CSS.
 - **Pages:** Landing, Register, **SelectPlan**, Dashboard, Project Creation, Project Editor, Admin Dashboard.
-- **Branding:** Saffron orange (#FF9933) and deep purple (#6B21A8) color scheme.
+- **Branding:** Saffron orange (#FF9933) and deep purple (#6B21A8) color scheme. App name rendered as text logo: "Indo" in #FF9933 and "Scribe" in #6B21A8 via the `AppLogo` component (`client/src/components/AppLogo.tsx`).
 - **Typography:** Google Fonts CDN for Noto Sans Devanagari.
 
 ### Backend

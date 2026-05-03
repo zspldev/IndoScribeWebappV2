@@ -14,7 +14,7 @@ export default function Footer() {
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-xs">IndoScribe Pro Beta v. 0.1 by Zapurzaa Systems</p>
+          <p className="text-xs">IndoScribe Beta v. 0.1 by Zapurzaa Systems</p>
         </TooltipContent>
       </Tooltip>
     </footer>

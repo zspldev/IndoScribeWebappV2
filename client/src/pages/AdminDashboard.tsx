@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguages } from "@/lib/useLanguages";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 
 interface AdminUser {
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-admin">
       <nav className="h-14 border-b flex items-center px-6 gap-4 bg-card">
-        <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
+        <AppLogo className="text-xl" />
         <span className="text-sm text-muted-foreground" data-testid="text-admin-user-name">
           {user.fullName}
         </span>

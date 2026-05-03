@@ -43,7 +43,7 @@ export default function HowItWorks() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto" data-testid="dialog-how-it-works">
           <DialogHeader>
-            <DialogTitle data-testid="text-how-it-works-title">IndoScribe Pro: How it works</DialogTitle>
+            <DialogTitle data-testid="text-how-it-works-title">IndoScribe: How it works</DialogTitle>
           </DialogHeader>
 
           <ol className="space-y-3 list-none">

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, FileText, Clock, FolderOpen, LogOut, Loader2, AlertTriangle, Mail, CalendarClock } from "lucide-react";
 import { useLanguages } from "@/lib/useLanguages";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 
 interface Project {
@@ -81,7 +81,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-dashboard">
       <nav className="h-14 border-b flex items-center px-6 gap-4 bg-card">
-        <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
+        <AppLogo className="text-xl" />
         <div className="flex items-center gap-2" data-testid="text-user-name">
           <span className="text-sm text-muted-foreground">
             {user.fullName}

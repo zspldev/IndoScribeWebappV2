@@ -15,7 +15,7 @@ import {
   Star,
   Loader2,
 } from "lucide-react";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 
 interface Plan {
@@ -110,7 +110,7 @@ export default function SelectPlan() {
           className="flex items-center gap-2"
           data-testid="link-logo"
         >
-          <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
+          <AppLogo className="text-xl" />
         </button>
         <div className="flex-1" />
 
@@ -241,7 +241,7 @@ export default function SelectPlan() {
                         {plan.planName}
                       </h3>
                       <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
-                        {plan.description || `The ${plan.planName} plan for IndoScribe Pro.`}
+                        {plan.description || `The ${plan.planName} plan for IndoScribe.`}
                       </p>
 
                       {/* Price */}

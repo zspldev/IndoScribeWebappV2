@@ -40,7 +40,7 @@ import {
 import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import { useLanguages } from "@/lib/useLanguages";
 import { transliterateWord } from "@/lib/transliterate";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 
 interface ProjectData {
@@ -588,7 +588,7 @@ export default function ProjectEditor() {
         <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <img src={combinedLogo} alt="IndoScribe Pro" className="h-7 flex-shrink-0" />
+        <AppLogo className="text-xl flex-shrink-0" />
         <span className="text-sm text-muted-foreground" data-testid="text-user-name">{user.fullName}</span>
         <HowItWorks />
         <div className="flex-1" />

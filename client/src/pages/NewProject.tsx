@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Loader2, FileAudio, X, AlertTriangle, BookOpen, Search, ChevronRight } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import combinedLogo from "@/assets/images/ISP-Combined-Logo.png";
+import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
 import AudioRecorder from "@/components/AudioRecorder";
 
@@ -200,7 +200,7 @@ export default function NewProject() {
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-new-project">
       <nav className="h-14 border-b flex items-center px-6 gap-4 bg-card">
-        <img src={combinedLogo} alt="IndoScribe Pro" className="h-8" />
+        <AppLogo className="text-xl" />
         <div className="flex items-center gap-2" data-testid="text-user-name">
           <span className="text-sm text-muted-foreground">{user.fullName}</span>
           <span className="text-xs text-muted-foreground">|</span>
