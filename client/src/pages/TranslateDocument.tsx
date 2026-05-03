@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import AppLogo from "@/components/AppLogo";
+import { Document, Paragraph, TextRun, Packer } from "docx";
 import {
   Upload, FileText, Languages, LogOut, Download,
   Trash2, ArrowLeft, Loader2, X, CheckCircle, AlertTriangle, Zap,
@@ -135,27 +136,40 @@ export default function TranslateDocument() {
     handleFileChange(e.dataTransfer.files[0] ?? null);
   }, [handleFileChange]);
 
-  const downloadFromServer = async (id: number, field: "original" | "translated") => {
-    try {
-      const res = await fetch(`/api/document-translations/${id}/download?field=${field}`);
-      if (!res.ok) {
-        toast({ title: "Download failed", description: "Could not download the file. Please try again.", variant: "destructive" });
-        return;
+  const triggerBlobDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const downloadFile = async (dt: DocTranslation, field: "original" | "translated") => {
+    const text = field === "translated" ? (dt.translatedText ?? "") : dt.originalText;
+    const baseName = dt.filename.replace(/\.[^.]+$/, "");
+    const prefix = field === "translated" ? "translated-" : "original-";
+    const filename = `${prefix}${baseName}.${dt.fileType}`;
+
+    if (dt.fileType === "docx") {
+      try {
+        const paragraphs = text.split(/\r?\n/).map(
+          line => new Paragraph({ children: [new TextRun({ text: line, size: 24 })] })
+        );
+        const doc = new Document({ sections: [{ children: paragraphs }] });
+        const buffer = await Packer.toBuffer(doc);
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+        triggerBlobDownload(blob, filename);
+      } catch {
+        toast({ title: "Download failed", description: "Could not generate DOCX. Please try again.", variant: "destructive" });
       }
-      const blob = await res.blob();
-      const disposition = res.headers.get("Content-Disposition") ?? "";
-      const match = disposition.match(/filename="([^"]+)"/);
-      const filename = match ? match[1] : `document-${id}`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      toast({ title: "Download failed", description: "Network error. Please try again.", variant: "destructive" });
+    } else {
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      triggerBlobDownload(blob, filename);
     }
   };
 
@@ -418,7 +432,7 @@ export default function TranslateDocument() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => downloadFromServer(displayed.id, "original")}
+                        onClick={() => downloadFile(displayed, "original")}
                         className="gap-1.5 text-xs"
                         data-testid="button-download-original"
                       >
@@ -427,7 +441,7 @@ export default function TranslateDocument() {
                       {displayed.translatedText && (
                         <Button
                           size="sm"
-                          onClick={() => downloadFromServer(displayed.id, "translated")}
+                          onClick={() => downloadFile(displayed, "translated")}
                           className="gap-1.5 text-xs bg-[#FF9933] hover:bg-[#e8881f] text-white border-0"
                           data-testid="button-download-translated"
                         >
