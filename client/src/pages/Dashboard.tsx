@@ -28,6 +28,18 @@ interface Project {
   updatedAt: string;
 }
 
+interface DocTranslation {
+  id: number;
+  filename: string;
+  fileType: string;
+  sourceLanguageCode: string;
+  targetLanguageCode: string;
+  wordCount: number | null;
+  status: string;
+  errorMessage: string | null;
+  createdAt: string;
+}
+
 interface Announcement {
   id: number;
   title: string;
@@ -41,13 +53,23 @@ interface Announcement {
   createdAt: string;
 }
 
+const LANG_NAME: Record<string, string> = {
+  "en-IN": "English",
+  "hi-IN": "Hindi",
+  "mr-IN": "Marathi",
+};
+
+type ActiveTab = "transcription" | "translation";
+
 export default function Dashboard() {
   const { user, logout, refetchUser } = useAuth();
   const canViewHistory = user?.role === "admin" || (user?.planFeatures ?? []).includes("project_history");
+  const canUseDocTranslation = user?.role === "admin" || (user?.planFeatures ?? []).includes("document_translation");
   const { getLanguageName } = useLanguages();
   const [, setLocation] = useLocation();
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [showTrialExpiredDialog, setShowTrialExpiredDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("transcription");
 
   useEffect(() => {
     refetchUser();
@@ -55,6 +77,12 @@ export default function Dashboard() {
 
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
+    refetchOnMount: "always",
+  });
+
+  const { data: docTranslations, isLoading: docTranslationsLoading } = useQuery<DocTranslation[]>({
+    queryKey: ["/api/document-translations"],
+    enabled: !!user && activeTab === "translation",
     refetchOnMount: "always",
   });
 
@@ -88,6 +116,19 @@ export default function Dashboard() {
         return <Badge className="text-xs bg-[hsl(270,50%,40%)] text-white" data-testid={`badge-status-${status}`}>Translated</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs" data-testid={`badge-status-${status}`}>{status}</Badge>;
+    }
+  };
+
+  const getDocStatusBadge = (status: string) => {
+    switch (status) {
+      case "done":
+        return <Badge variant="secondary" className="text-xs">Translated</Badge>;
+      case "processing":
+        return <Badge className="text-xs bg-[hsl(30,100%,50%)] text-white">Processing</Badge>;
+      case "error":
+        return <Badge variant="destructive" className="text-xs">Error</Badge>;
+      default:
+        return <Badge variant="outline" className="text-xs">{status}</Badge>;
     }
   };
 
@@ -128,16 +169,6 @@ export default function Dashboard() {
         </div>
         <div className="flex-1" />
         <HowItWorks />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation("/translate-document")}
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
-          data-testid="button-translate-document"
-        >
-          <Languages className="h-4 w-4" />
-          <span className="hidden sm:inline">Translate Doc</span>
-        </Button>
         {user.role === "admin" && (
           <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-admin">
             Admin
@@ -186,6 +217,7 @@ export default function Dashboard() {
       )}
 
       <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
+        {/* Header */}
         <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
           <div>
             <h1 className="text-xl font-semibold text-foreground" data-testid="text-dashboard-title">
@@ -204,22 +236,34 @@ export default function Dashboard() {
               )}
             </p>
           </div>
-          <Button
-            onClick={() => {
-              if (isTrialExpired) {
-                setShowTrialExpiredDialog(true);
-              } else {
-                setLocation("/projects/new");
-              }
-            }}
-            className="bg-[hsl(30,100%,50%)] border-[hsl(30,100%,42%)] text-white"
-            data-testid="button-new-project"
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            New Project
-          </Button>
+          {activeTab === "transcription" ? (
+            <Button
+              onClick={() => {
+                if (isTrialExpired) {
+                  setShowTrialExpiredDialog(true);
+                } else {
+                  setLocation("/projects/new");
+                }
+              }}
+              className="bg-[hsl(30,100%,50%)] border-[hsl(30,100%,42%)] text-white"
+              data-testid="button-new-project"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Project
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setLocation("/translate-document")}
+              className="bg-[hsl(270,61%,40%)] hover:bg-[hsl(270,61%,35%)] text-white"
+              data-testid="button-new-translation"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Translation
+            </Button>
+          )}
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
           <Card className="p-4" data-testid="card-stat-projects">
             <div className="flex items-center gap-3">
@@ -256,55 +300,156 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {!canViewHistory ? (
-          <Card className="p-12 text-center" data-testid="card-no-history-feature">
-            <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm font-medium mb-1">Project History Not Available</p>
-            <p className="text-xs text-muted-foreground">Your current plan does not include project history. Please upgrade to view and manage past projects.</p>
-          </Card>
-        ) : isLoading ? (
-          <div className="flex justify-center py-12" data-testid="loading-projects">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : projects && projects.length > 0 ? (
-          <div className="space-y-2" data-testid="list-projects">
-            {projects.map((project) => (
-              <Card
-                key={project.id}
-                className="p-4 hover-elevate cursor-pointer"
-                onClick={() => setLocation(`/projects/${project.id}`)}
-                data-testid={`card-project-${project.id}`}
-              >
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" data-testid={`text-project-name-${project.id}`}>
-                        {project.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {getLanguageName(project.languageCode)} &middot; {formatDate(project.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  {getStatusBadge(project.status)}
-                </div>
+        {/* Tab toggle */}
+        <div className="flex items-center gap-2 mb-4" data-testid="section-tab-toggle">
+          <button
+            onClick={() => setActiveTab("transcription")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+              activeTab === "transcription"
+                ? "bg-[hsl(30,100%,50%)] border-[hsl(30,100%,42%)] text-white"
+                : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-[hsl(30,100%,50%)]"
+            }`}
+            data-testid="tab-transcription"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Transcription Projects
+          </button>
+          <button
+            onClick={() => setActiveTab("translation")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+              activeTab === "translation"
+                ? "bg-[hsl(270,61%,40%)] border-[hsl(270,61%,32%)] text-white"
+                : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-[hsl(270,61%,40%)]"
+            }`}
+            data-testid="tab-translation"
+          >
+            <Languages className="h-3.5 w-3.5" />
+            Translation Projects
+          </button>
+        </div>
+
+        {/* Transcription Projects Tab */}
+        {activeTab === "transcription" && (
+          <>
+            {!canViewHistory ? (
+              <Card className="p-12 text-center" data-testid="card-no-history-feature">
+                <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm font-medium mb-1">Project History Not Available</p>
+                <p className="text-xs text-muted-foreground">Your current plan does not include project history. Please upgrade to view and manage past projects.</p>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-12 text-center" data-testid="empty-projects">
-            <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground mb-3">No projects yet</p>
-            <Button
-              onClick={() => setLocation("/projects/new")}
-              variant="outline"
-              data-testid="button-first-project"
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Create your first project
-            </Button>
-          </Card>
+            ) : isLoading ? (
+              <div className="flex justify-center py-12" data-testid="loading-projects">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : projects && projects.length > 0 ? (
+              <div className="space-y-2" data-testid="list-projects">
+                {projects.map((project) => (
+                  <Card
+                    key={project.id}
+                    className="p-4 hover-elevate cursor-pointer"
+                    onClick={() => setLocation(`/projects/${project.id}`)}
+                    data-testid={`card-project-${project.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" data-testid={`text-project-name-${project.id}`}>
+                            {project.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {getLanguageName(project.languageCode)} &middot; {formatDate(project.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      {getStatusBadge(project.status)}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-12 text-center" data-testid="empty-projects">
+                <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">No projects yet</p>
+                <Button
+                  onClick={() => setLocation("/projects/new")}
+                  variant="outline"
+                  data-testid="button-first-project"
+                >
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Create your first project
+                </Button>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* Translation Projects Tab */}
+        {activeTab === "translation" && (
+          <>
+            {!canUseDocTranslation ? (
+              <Card className="p-12 text-center" data-testid="card-no-translation-feature">
+                <Languages className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm font-medium mb-1">Document Translation Not Available</p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Upgrade to Basic or Professional to translate .txt and .docx files between Hindi, Marathi, and English.
+                </p>
+                {user.role !== "admin" && (
+                  <Button variant="outline" onClick={() => setLocation("/upgrade")} data-testid="button-upgrade-for-translation">
+                    View Plans
+                  </Button>
+                )}
+              </Card>
+            ) : docTranslationsLoading ? (
+              <div className="flex justify-center py-12" data-testid="loading-translations">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : docTranslations && docTranslations.length > 0 ? (
+              <div className="space-y-2" data-testid="list-translations">
+                {docTranslations.map((dt) => (
+                  <Card
+                    key={dt.id}
+                    className="p-4 hover-elevate cursor-pointer"
+                    onClick={() => setLocation("/translate-document")}
+                    data-testid={`card-translation-${dt.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Languages className="h-4 w-4 text-[hsl(270,61%,40%)] flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" data-testid={`text-translation-name-${dt.id}`}>
+                            {dt.filename}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {LANG_NAME[dt.sourceLanguageCode] ?? dt.sourceLanguageCode}
+                            {" → "}
+                            {LANG_NAME[dt.targetLanguageCode] ?? dt.targetLanguageCode}
+                            {" · "}
+                            {dt.wordCount != null ? `${dt.wordCount} words · ` : ""}
+                            {formatDate(dt.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      {getDocStatusBadge(dt.status)}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-12 text-center" data-testid="empty-translations">
+                <Languages className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">No document translations yet</p>
+                <Button
+                  onClick={() => setLocation("/translate-document")}
+                  variant="outline"
+                  data-testid="button-first-translation"
+                >
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Translate your first document
+                </Button>
+              </Card>
+            )}
+          </>
         )}
       </div>
 
