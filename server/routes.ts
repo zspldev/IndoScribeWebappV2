@@ -1886,6 +1886,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download original or translated document in its native format
+  app.get("/api/document-translations/:id/download", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const row = await storage.getDocumentTranslationById(parseInt(req.params.id));
+      if (!row) return res.status(404).json({ error: "Not found" });
+      if (row.userId !== userId) return res.status(403).json({ error: "Access denied" });
+
+      const field = req.query.field === "translated" ? "translated" : "original";
+      const text = field === "translated" ? (row.translatedText ?? "") : row.originalText;
+      const baseName = row.filename.replace(/\.[^.]+$/, "");
+      const prefix = field === "translated" ? "translated-" : "original-";
+
+      if (row.fileType === "docx") {
+        const paragraphs = text.split(/\r?\n/).map(line =>
+          new Paragraph({ children: [new TextRun({ text: line, size: 24 })] })
+        );
+        const doc = new Document({ sections: [{ children: paragraphs }] });
+        const buffer = await Packer.toBuffer(doc);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        res.setHeader("Content-Disposition", `attachment; filename="${prefix}${baseName}.docx"`);
+        res.send(buffer);
+      } else {
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${prefix}${baseName}.txt"`);
+        res.send(text);
+      }
+    } catch (e) {
+      res.status(500).json({ error: "Failed to generate download" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

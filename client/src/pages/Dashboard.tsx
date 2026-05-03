@@ -249,7 +249,7 @@ export default function Dashboard() {
               data-testid="button-new-project"
             >
               <Plus className="h-4 w-4 mr-1.5" />
-              New Project
+              New Transcription
             </Button>
           ) : (
             <Button

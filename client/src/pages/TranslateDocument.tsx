@@ -404,20 +404,28 @@ export default function TranslateDocument() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => downloadText(displayed.originalText, `original-${displayed.filename.replace(/\.[^.]+$/, "")}.txt`)}
+                        onClick={() => {
+                          const a = document.createElement("a");
+                          a.href = `/api/document-translations/${displayed.id}/download?field=original`;
+                          a.click();
+                        }}
                         className="gap-1.5 text-xs"
                         data-testid="button-download-original"
                       >
-                        <Download className="h-3.5 w-3.5" /> Original
+                        <Download className="h-3.5 w-3.5" /> Original (.{displayed.fileType})
                       </Button>
                       {displayed.translatedText && (
                         <Button
                           size="sm"
-                          onClick={() => downloadText(displayed.translatedText!, `translated-${LANG_NAME[displayed.targetLanguageCode].toLowerCase()}-${displayed.filename.replace(/\.[^.]+$/, "")}.txt`)}
+                          onClick={() => {
+                            const a = document.createElement("a");
+                            a.href = `/api/document-translations/${displayed.id}/download?field=translated`;
+                            a.click();
+                          }}
                           className="gap-1.5 text-xs bg-[#FF9933] hover:bg-[#e8881f] text-white border-0"
                           data-testid="button-download-translated"
                         >
-                          <Download className="h-3.5 w-3.5" /> Translated
+                          <Download className="h-3.5 w-3.5" /> Translated (.{displayed.fileType})
                         </Button>
                       )}
                     </div>
