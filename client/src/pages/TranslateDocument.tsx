@@ -135,14 +135,28 @@ export default function TranslateDocument() {
     handleFileChange(e.dataTransfer.files[0] ?? null);
   }, [handleFileChange]);
 
-  const downloadText = (text: string, filename: string) => {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadFromServer = async (id: number, field: "original" | "translated") => {
+    try {
+      const res = await fetch(`/api/document-translations/${id}/download?field=${field}`);
+      if (!res.ok) {
+        toast({ title: "Download failed", description: "Could not download the file. Please try again.", variant: "destructive" });
+        return;
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match ? match[1] : `document-${id}`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: "Download failed", description: "Network error. Please try again.", variant: "destructive" });
+    }
   };
 
   const displayed = activeHistory ?? result;
@@ -404,11 +418,7 @@ export default function TranslateDocument() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          const a = document.createElement("a");
-                          a.href = `/api/document-translations/${displayed.id}/download?field=original`;
-                          a.click();
-                        }}
+                        onClick={() => downloadFromServer(displayed.id, "original")}
                         className="gap-1.5 text-xs"
                         data-testid="button-download-original"
                       >
@@ -417,11 +427,7 @@ export default function TranslateDocument() {
                       {displayed.translatedText && (
                         <Button
                           size="sm"
-                          onClick={() => {
-                            const a = document.createElement("a");
-                            a.href = `/api/document-translations/${displayed.id}/download?field=translated`;
-                            a.click();
-                          }}
+                          onClick={() => downloadFromServer(displayed.id, "translated")}
                           className="gap-1.5 text-xs bg-[#FF9933] hover:bg-[#e8881f] text-white border-0"
                           data-testid="button-download-translated"
                         >
