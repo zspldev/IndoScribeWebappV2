@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs";
 
 const FONTS_DIR = path.join(process.cwd(), "server", "fonts");
-
 const WATERMARK_TEXT = "Created by IndoScribe";
 
 function getFontPath(fontFile: string | null | undefined): string | null {
@@ -12,7 +11,7 @@ function getFontPath(fontFile: string | null | undefined): string | null {
   return fs.existsSync(fp) ? fp : null;
 }
 
-export async function generatePdf(
+async function generatePdfInternal(
   text: string,
   fontFile: string | null | undefined,
   addWatermark: boolean
@@ -28,7 +27,11 @@ export async function generatePdf(
     const fontPath = getFontPath(fontFile);
     const customFontName = "ContentFont";
     if (fontPath) {
-      doc.registerFont(customFontName, fontPath);
+      try {
+        doc.registerFont(customFontName, fontPath);
+      } catch {
+        // Font registration failed — will fall back to Helvetica
+      }
     }
 
     const drawWatermark = () => {
@@ -37,8 +40,8 @@ export async function generatePdf(
       doc.save();
       doc.translate(w / 2, h / 2);
       doc.rotate(-45);
-      doc.fontSize(52).fillColor("#000000").opacity(0.06);
-      doc.text(WATERMARK_TEXT, -250, -26, { width: 500, align: "center" });
+      doc.font("Helvetica").fontSize(20).fillColor("#999999").fillOpacity(0.45);
+      doc.text(WATERMARK_TEXT, -200, -10, { width: 400, align: "center", lineBreak: false });
       doc.restore();
     };
 
@@ -47,8 +50,9 @@ export async function generatePdf(
       doc.on("pageAdded", drawWatermark);
     }
 
-    doc.opacity(1).fillColor("#000000");
-    if (fontPath) {
+    doc.fillOpacity(1).fillColor("#000000");
+    const useCustomFont = fontPath !== null;
+    if (useCustomFont) {
       doc.font(customFontName).fontSize(12);
     } else {
       doc.font("Helvetica").fontSize(12);
@@ -72,4 +76,18 @@ export async function generatePdf(
 
     doc.end();
   });
+}
+
+export async function generatePdf(
+  text: string,
+  fontFile: string | null | undefined,
+  addWatermark: boolean
+): Promise<Buffer> {
+  try {
+    return await generatePdfInternal(text, fontFile, addWatermark);
+  } catch (err) {
+    // Custom font (e.g. Devanagari) caused a fontkit GPOS crash — retry without it
+    console.warn("PDF generation failed with custom font, retrying with default font:", (err as Error).message);
+    return await generatePdfInternal(text, null, addWatermark);
+  }
 }

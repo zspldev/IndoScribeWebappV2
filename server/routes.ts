@@ -6,6 +6,7 @@ import { db } from "./db";
 import { languages, transcriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { Document, Paragraph, TextRun, Packer, PageBreak, Header, AlignmentType } from "docx";
+import JSZip from "jszip";
 import { generatePdf } from "./services/PdfExportService";
 import { languageGroups, languageGroupLanguages } from "@shared/schema";
 import { inArray } from "drizzle-orm";
@@ -73,6 +74,42 @@ const upload = multer({
     }
   },
 });
+
+async function injectDocxDiagonalWatermark(buffer: Buffer): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(buffer);
+  const headerFiles = Object.keys(zip.files).filter(f => /^word\/header\d+\.xml$/.test(f));
+  if (headerFiles.length === 0) return buffer;
+
+  const vmlWatermark = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+       xmlns:o="urn:schemas-microsoft-com:office:office"
+       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+       xmlns:v="urn:schemas-microsoft-com:vml"
+       xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+       xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+       xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"
+       xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"
+       mc:Ignorable="w14 w15">
+  <w:p>
+    <w:pPr><w:pStyle w:val="Header"/></w:pPr>
+    <w:r>
+      <w:rPr/>
+      <w:pict>
+        <v:shape id="IndoScribeWatermark" o:spid="_x0000_s1025" type="#_x0000_t136"
+          style="position:absolute;margin-left:0;margin-top:0;width:300pt;height:36pt;z-index:-251654144;mso-position-horizontal:center;mso-position-horizontal-relative:margin;mso-position-vertical:center;mso-position-vertical-relative:margin;rotation:315"
+          fillcolor="#AAAAAA" stroked="f">
+          <v:fill o:detectmouseclick="t"/>
+          <v:textpath style="font-family:&quot;Arial&quot;;font-size:1pt;font-weight:bold;font-style:normal"
+            string="Created by IndoScribe" trim="t" on="t"/>
+        </v:shape>
+      </w:pict>
+    </w:r>
+  </w:p>
+</w:hdr>`;
+
+  zip.file(headerFiles[0], vmlWatermark);
+  return await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+}
 
 async function userHasFeature(userId: number, featureKey: string): Promise<boolean> {
   const user = await storage.getUserById(userId);
@@ -1302,28 +1339,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const addDocxWatermark = await userHasFeature(userId, "docx_watermark");
-      const watermarkHeader = addDocxWatermark ? new Header({
-        children: [new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: "Created by IndoScribe", color: "BBBBBB", size: 20, italics: true })],
-        })],
+      const placeholderHeader = addDocxWatermark ? new Header({
+        children: [new Paragraph({ children: [] })],
       }) : undefined;
 
       const doc = new Document({
         sections: [{
           properties: {},
-          headers: watermarkHeader ? { default: watermarkHeader } : undefined,
+          headers: placeholderHeader ? { default: placeholderHeader } : undefined,
           children,
         }],
       });
-      const buffer = await Packer.toBuffer(doc);
+      let docBuffer = await Packer.toBuffer(doc);
+      if (addDocxWatermark) {
+        docBuffer = await injectDocxDiagonalWatermark(docBuffer);
+      }
       const timestamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
       const suffix = mode === "both" ? "-bilingual" : mode === "translation" ? `-${translationLang}` : "";
       const filename = `${project.title.replace(/[^a-zA-Z0-9]/g, "_")}${suffix}-${timestamp}.docx`;
 
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.send(buffer);
+      res.send(docBuffer);
 
       await storage.updateProject(project.id, { exportedAt: new Date(), status: "completed" });
       await storage.updateUser(userId, {
