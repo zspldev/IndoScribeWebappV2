@@ -11,7 +11,7 @@ function getFontPath(fontFile: string | null | undefined): string | null {
   return fs.existsSync(fp) ? fp : null;
 }
 
-async function generatePdfInternal(
+export async function generatePdf(
   text: string,
   fontFile: string | null | undefined,
   addWatermark: boolean
@@ -27,12 +27,11 @@ async function generatePdfInternal(
     const fontPath = getFontPath(fontFile);
     const customFontName = "ContentFont";
     if (fontPath) {
-      try {
-        doc.registerFont(customFontName, fontPath);
-      } catch {
-        // Font registration failed — will fall back to Helvetica
-      }
+      doc.registerFont(customFontName, fontPath);
     }
+
+    const leftMargin = doc.page.margins.left;
+    const topMargin = doc.page.margins.top;
 
     const drawWatermark = () => {
       const w = doc.page.width;
@@ -41,8 +40,12 @@ async function generatePdfInternal(
       doc.translate(w / 2, h / 2);
       doc.rotate(-45);
       doc.font("Helvetica").fontSize(20).fillColor("#999999").fillOpacity(0.45);
-      doc.text(WATERMARK_TEXT, -200, -10, { width: 400, align: "center", lineBreak: false });
+      // Use a large width to guarantee no wrapping; lineBreak:false prevents \n breaks
+      doc.text(WATERMARK_TEXT, -600, -12, { width: 1200, align: "center", lineBreak: false });
       doc.restore();
+      // reset cursor — doc.restore() does not reset the text cursor
+      doc.x = leftMargin;
+      doc.y = topMargin;
     };
 
     if (addWatermark) {
@@ -51,12 +54,15 @@ async function generatePdfInternal(
     }
 
     doc.fillOpacity(1).fillColor("#000000");
-    const useCustomFont = fontPath !== null;
-    if (useCustomFont) {
+    if (fontPath) {
       doc.font(customFontName).fontSize(12);
     } else {
       doc.font("Helvetica").fontSize(12);
     }
+
+    // Reset to top of content area before writing content
+    doc.x = leftMargin;
+    doc.y = topMargin;
 
     const lines = text.split("\n");
     let firstLine = true;
@@ -76,18 +82,4 @@ async function generatePdfInternal(
 
     doc.end();
   });
-}
-
-export async function generatePdf(
-  text: string,
-  fontFile: string | null | undefined,
-  addWatermark: boolean
-): Promise<Buffer> {
-  try {
-    return await generatePdfInternal(text, fontFile, addWatermark);
-  } catch (err) {
-    // Custom font (e.g. Devanagari) caused a fontkit GPOS crash — retry without it
-    console.warn("PDF generation failed with custom font, retrying with default font:", (err as Error).message);
-    return await generatePdfInternal(text, null, addWatermark);
-  }
 }
