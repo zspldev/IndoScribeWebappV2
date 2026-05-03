@@ -46,7 +46,6 @@ export default function Footer() {
             <Row label="Version" value={`v${about.version}`} />
             <Row label="Release Date" value={new Date(about.releaseDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} />
             <Row label="Platform" value={about.platform} />
-            <Row label="Languages" value={about.languages.join(", ")} />
 
             <div className="py-3 flex justify-between items-center">
               <span className="text-muted-foreground">Company</span>
