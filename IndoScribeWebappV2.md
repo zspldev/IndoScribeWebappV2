@@ -183,21 +183,25 @@ Plan feature flags are enforced on both the backend (API routes reject disallowe
 **Status:** Complete
 
 **Summary:**
-DOCX export now automatically adds a header watermark based on the user's plan. Admins never get a watermark. The watermark is applied server-side — users cannot control this.
+DOCX export now automatically adds a diagonal, centered, full-page VML watermark based on the user's plan. Admins never get a watermark. The watermark is applied server-side — users cannot control this.
 
 **Watermark text:** `Created by IndoScribe`
 
 **Plan behaviour:**
-- Starter plan (`docx_watermark` feature): every page header shows "Created by IndoScribe" in light gray italic
+- Starter plan (`docx_watermark` feature): every page shows a diagonal gray "Created by IndoScribe" watermark centered on the page
 - Basic / Professional / Enterprise (`docx_no_watermark` feature): clean document, no watermark
 
-**Implementation (`server/routes.ts`):**
-- Checks `docx_watermark` feature for the requesting user
-- If true, creates a `Header` (from the `docx` package) with centered, gray, italic watermark text
-- Passes the header as `sections[0].headers.default` in the `Document` constructor
+**Implementation (`server/routes.ts` — `injectDocxDiagonalWatermark()`):**
+- The `docx` library generates the file in memory; a placeholder empty header (`Header` with an empty `Paragraph`) is injected first to ensure Word creates `word/header1.xml` in the archive.
+- After generation, **JSZip** post-processes the raw `.docx` binary.
+- `word/header1.xml` is replaced with a full VML XML watermark shape:
+  - `<v:shape>` with `style="rotation:315; mso-position-horizontal:center; mso-position-vertical:center; width:407pt; height:204pt"`
+  - `<v:textpath>` containing the watermark text in gray (`#CCCCCC`), 20pt
+  - The shape is wrapped in a `<w:pict>` element inside a paragraph with an absolute anchor
+- Result: diagonal watermark centered on every page of the document
 
 **Font mapping improvement:**
-- DOCX export now uses `getDocxFontName(scriptFamily, script)` helper function
+- DOCX export uses `getDocxFontName(scriptFamily, script)` helper function
 - Maps script families to proper Noto font names: `devanagari → "Noto Sans Devanagari"`, `bengali → "Noto Sans Bengali"`, etc.
 - Falls back to `"Calibri"` for Latin and unsupported scripts
 
@@ -227,7 +231,10 @@ Added PDF export using `pdfkit`. PDFs support all script families via downloaded
 **Service:** `server/services/PdfExportService.ts`
 - `generatePdf(text, fontFile, addWatermark)` — async, returns `Buffer`
 - Registers and applies the appropriate Noto font if `fontFile` is set
-- Diagonal watermark (48pt, 6% opacity, −45°) added via pdfkit's `rotate()` + `text()` on every page via `doc.on("pageAdded", ...)` callback
+- Diagonal watermark drawn via `doc.save()` → `translate(w/2, h/2)` → `rotate(-45)` → text at **20pt**, `#999999`, **45% fill opacity** → `doc.restore()`
+- After `doc.restore()`, text cursor is explicitly reset: `doc.x = leftMargin; doc.y = topMargin` — pdfkit's `restore()` resets the PDF graphics state but does NOT reset the internal text cursor; skipping this reset caused content to render at the wrong position
+- Watermark `text()` call uses `width: 1200` (positioned at −600) to prevent any word-wrapping of the watermark string; `lineBreak: false` prevents newline breaks
+- A `doc.on("pageAdded", drawWatermark)` listener applies the watermark to every subsequent page
 
 **Route:** `GET /api/projects/:id/pdf`
 - Parameters: `mode` (source/translation/both), `translationLang`
@@ -239,6 +246,72 @@ Added PDF export using `pdfkit`. PDFs support all script families via downloaded
 - "Download PDF" button appears below the DOCX button when `canExportPdf` is true
 - Shares the `exportMode` and `activeTranslationLang` controls with DOCX export
 - `isExportingPdf` state shows loading spinner during generation
+
+---
+
+### 7. Bug Fixes & Technical Patches
+
+**Status:** Complete
+
+---
+
+#### 7a. DOCX Watermark — Replaced Text Header with VML Diagonal Watermark
+
+**Problem:** The original DOCX watermark was a plain centered italic text in the page header. It was not diagonal, not centered on the page body, and did not look like a professional watermark.
+
+**Fix:** Replaced the `Header` text approach entirely with JSZip post-processing that injects a Word VML watermark shape directly into `word/header1.xml`. See Section 5 for full details.
+
+---
+
+#### 7b. PDF Generation — Fontkit GPOS Null-Anchor Crash
+
+**Problem:** Generating PDFs with `NotoSansDevanagari-Regular.ttf` (and potentially other Noto fonts) crashed with:
+```
+TypeError: Cannot read properties of null (reading 'xCoordinate')
+    at GPOSProcessor.getAnchor (fontkit/dist/main.cjs)
+```
+The font's GPOS (glyph positioning) table contains mark anchor records where the anchor object is null. Fontkit's `GPOSProcessor.getAnchor()` did not guard against this.
+
+**Fix:** One-line null guard added to `node_modules/fontkit/dist/main.cjs` at the top of `getAnchor()`:
+```js
+getAnchor(anchor) {
+    if (!anchor) return { x: 0, y: 0 };  // ← added
+    // TODO: contour point, device tables
+    let x = anchor.xCoordinate;
+    ...
+```
+Returning `{ x: 0, y: 0 }` for null anchors is safe — it means the mark glyph is positioned with zero offset relative to its base, which is the correct default.
+
+> **Important:** This patch is applied directly to the bundled `node_modules/fontkit/dist/main.cjs`. It will be lost if `npm install` is re-run and must be reapplied manually.
+
+---
+
+#### 7c. PDF Generation — Text Cursor Not Reset After Watermark Drawing
+
+**Problem:** After drawing the watermark using pdfkit's coordinate transform (`doc.save()` / `translate` / `rotate` / `doc.restore()`), the internal text cursor (`doc.x`, `doc.y`) was left at an off-page position (e.g. `x = −200`, `y = 13`). Content written after the watermark started rendering from the wrong position — partially or entirely off the visible page area.
+
+**Root cause:** `doc.restore()` in pdfkit restores the PDF graphics state (transform matrix, fill color, etc.) but does **not** reset pdfkit's JavaScript-level text cursor properties (`doc.x`, `doc.y`).
+
+**Fix:** Explicitly reset the cursor after every `drawWatermark()` call:
+```ts
+doc.restore();
+doc.x = leftMargin;   // ← added
+doc.y = topMargin;    // ← added
+```
+
+---
+
+### 8. Navigation & UX Improvements
+
+**Status:** Complete
+
+**Plan name as upgrade link:**
+- The user's current plan name in the Dashboard and NewProject page headers is now a **clickable link** that navigates to `/upgrade` (the plan selection/upgrade page).
+- Admin users see the plan name as static non-clickable text.
+
+**Plan management — raw SQL workaround:**
+- `updateUserPlan()` in `server/storage.ts` uses a raw SQL query instead of Drizzle ORM's `update()`.
+- Reason: Drizzle ORM has a column-mapping bug with the `plans` table that caused incorrect field binding when using the ORM abstraction.
 
 ---
 
