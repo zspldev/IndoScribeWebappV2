@@ -1,0 +1,22 @@
+{
+  "appName": "IndoScribe",
+  "tagline": "Professional Audio Transcription & Translation for Indian Languages",
+  "version": "0.1.0",
+  "releaseDate": "2026-05-03",
+  "stage": "Beta",
+  "company": {
+    "name": "Zapurzaa Systems Pvt. Ltd.",
+    "url": "https://www.zapurzaasystems.com",
+    "country": "India"
+  },
+  "support": {
+    "email": "operations@zapurzaasystems.com",
+    "hours": "Mon–Fri, 10am–6pm IST"
+  },
+  "legal": {
+    "copyrightYear": "2026",
+    "privacyPolicyUrl": "/privacy-policy.pdf"
+  },
+  "languages": ["Hindi", "Marathi", "English"],
+  "platform": "Web"
+}
