@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
@@ -28,6 +34,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [consentAccepted, setConsentAccepted] = useState(false);
+  const [showPolicy, setShowPolicy] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -180,7 +187,16 @@ export default function Register() {
                 data-testid="checkbox-consent"
               />
               <label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                I agree to the Privacy Policy and consent to data processing as per DPDP Act 2023.
+                I have read and agree to the{" "}
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); setShowPolicy(true); }}
+                  className="text-primary underline underline-offset-2 hover:no-underline font-medium"
+                  data-testid="link-privacy-policy"
+                >
+                  Privacy Policy & EULA
+                </button>
+                {" "}and consent to data processing as per DPDP Act 2023.
                 Your data is stored securely in India. Audio files are retained for 15 days after project completion.
               </label>
             </div>
@@ -202,6 +218,34 @@ export default function Register() {
           </form>
         </Card>
       </div>
+
+      <Dialog open={showPolicy} onOpenChange={setShowPolicy}>
+        <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
+            <DialogTitle className="text-base font-semibold">Privacy Policy & End-User License Agreement</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <iframe
+              src="/privacy-policy.pdf"
+              title="Privacy Policy and EULA"
+              className="w-full h-full border-0"
+              data-testid="iframe-privacy-policy"
+            />
+          </div>
+          <div className="px-6 py-4 border-t shrink-0 flex justify-between items-center gap-3">
+            <p className="text-xs text-muted-foreground">
+              Check the box on the registration form to confirm you have read and accepted these terms.
+            </p>
+            <Button
+              onClick={() => { setConsentAccepted(true); setShowPolicy(false); }}
+              className="shrink-0"
+              data-testid="button-accept-policy"
+            >
+              I Accept
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
