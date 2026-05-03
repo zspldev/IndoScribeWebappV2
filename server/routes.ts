@@ -4,7 +4,9 @@ import multer from "multer";
 import { parseBuffer } from "music-metadata";
 import { db } from "./db";
 import { languages, transcriptions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
 import { Document, Paragraph, TextRun, Packer, PageBreak, Header, AlignmentType } from "docx";
 import JSZip from "jszip";
 import { generatePdf } from "./services/PdfExportService";
@@ -138,6 +140,41 @@ function getDocxFontName(scriptFamily?: string | null, script?: string | null): 
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Public: landing page config from JSON file
+  app.get("/api/landing-config", async (_req, res) => {
+    try {
+      const configPath = path.join(process.cwd(), "Landing-Page-Config.json");
+      const raw = fs.readFileSync(configPath, "utf8");
+      res.json(JSON.parse(raw));
+    } catch (e) {
+      res.status(500).json({ error: "Could not load landing config" });
+    }
+  });
+
+  // Public: live stats for landing page (user count + minutes transcribed)
+  app.get("/api/landing-stats", async (_req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT
+          COUNT(*)::int AS user_count,
+          COALESCE(SUM(total_minutes_transcribed), 0)::int AS total_minutes,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END)::int AS documents_count
+        FROM users
+        LEFT JOIN projects ON projects.user_id = users.id
+        WHERE users.role != 'admin'
+      `);
+      const row = result.rows[0] as any;
+      res.json({
+        users: row.user_count ?? 0,
+        minutes: row.total_minutes ?? 0,
+        documents: row.documents_count ?? 0,
+      });
+    } catch (e) {
+      res.status(500).json({ error: "Could not load stats" });
+    }
+  });
+
   // Get languages filtered by the authenticated user's plan group
   app.get("/api/languages", async (req, res) => {
     try {

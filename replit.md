@@ -13,7 +13,7 @@ The frontend is built with React 18+ (TypeScript), Vite, Wouter for routing, sha
 
 **Key Features:**
 - **User Interface:** React components, shadcn/ui, Tailwind CSS.
-- **Pages:** Landing, Register, **SelectPlan**, Dashboard, Project Creation, Project Editor, Admin Dashboard.
+- **Pages:** LandingMarketing (`/`), LoginPage (`/login`), Register, **SelectPlan**, Dashboard, Project Creation, Project Editor, Admin Dashboard.
 - **Branding:** Saffron orange (#FF9933) and deep purple (#6B21A8) color scheme. App name rendered as text logo: "Indo" in #FF9933 and "Scribe" in #6B21A8 via the `AppLogo` component (`client/src/components/AppLogo.tsx`).
 - **Typography:** Google Fonts CDN for Noto Sans Devanagari.
 
@@ -26,6 +26,7 @@ The backend is an Express.js REST API developed with TypeScript, utilizing sessi
 - **Translations:** List, Create/Retranslate, Update translated text.
 - **Plans:** Public listing of active plans (`GET /api/plans`), self-service plan selection (`PATCH /api/users/me/plan`), Admin CRUD for plans.
 - **Admin:** User management, usage statistics, STT provider configuration, system settings, formatting command management.
+- **Landing (public):** `GET /api/landing-config` (serves `Landing-Page-Config.json`), `GET /api/landing-stats` (live DB counts: non-admin user count, total minutes transcribed, completed project count).
 
 ### Data Storage
 The application uses Replit's built-in PostgreSQL database, managed with Drizzle ORM. Audio files are stored in AWS S3 if configured (`AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`), otherwise audio is stored as base64 in the database.
@@ -104,6 +105,9 @@ DOCX and PDF export functionality supports source-only, translation-only, or bil
 | `server/services/PdfExportService.ts` | PDF generation with diagonal watermark, cursor reset, fontkit dependency |
 | `server/storage.ts` | Data access layer; `updateUserPlan` uses raw SQL |
 | `node_modules/fontkit/dist/main.cjs` | Patched at line ~9990 with null guard in `getAnchor()` |
+| `Landing-Page-Config.json` | Marketing landing page content config (hero, stats, howItWorks, features, video, testimonials) |
+| `client/src/pages/LandingMarketing.tsx` | Full marketing landing page at `/` — dark hero, stats, how-it-works, features, video, testimonials, pricing, CTA |
+| `client/src/pages/LoginPage.tsx` | Clean dark login page at `/login` with back-to-home nav |
 | `client/src/pages/Dashboard.tsx` | Dashboard with plan name → `/upgrade` link |
 | `client/src/pages/NewProject.tsx` | New project page with plan name → `/upgrade` link |
 | `client/src/lib/auth.tsx` | Session management with sessionStorage session boundary detection |

@@ -1,0 +1,96 @@
+{
+  "hero": {
+    "tagline": "Hindi • Marathi • English • and more",
+    "headline": "Your Voice. Your Language. Perfectly Written.",
+    "subheadline": "Professional audio transcription, formatting, and translation for Indian languages — built for serious writing.",
+    "ctaPrimary": "Start Free — 30 Minutes Included",
+    "ctaSecondary": "Watch Demo"
+  },
+  "stats": {
+    "showLiveStats": true,
+    "items": [
+      { "key": "users",     "label": "Professionals",        "fallback": "500+" },
+      { "key": "minutes",   "label": "Minutes Transcribed",  "fallback": "12,000+" },
+      { "key": "documents", "label": "Documents Created",    "fallback": "2,400+" }
+    ]
+  },
+  "howItWorks": [
+    {
+      "step": 1,
+      "title": "Upload or Record",
+      "description": "Upload an audio file (MP3, WAV, M4A) or record live audio directly in the browser — up to 30 minutes."
+    },
+    {
+      "step": 2,
+      "title": "AI Transcription",
+      "description": "Powered by Sarvam AI — India's leading speech model — with exceptional accuracy for Indic languages."
+    },
+    {
+      "step": 3,
+      "title": "Edit & Format",
+      "description": "Use the rich text editor and 109 voice formatting commands to structure your document while you speak."
+    },
+    {
+      "step": 4,
+      "title": "Export & Share",
+      "description": "Download as DOCX or PDF. Translate to another Indian language with one click."
+    }
+  ],
+  "features": [
+    {
+      "icon": "Mic",
+      "title": "Dictate. Transcribe. Format. Translate.",
+      "description": "Everything in one seamless workflow — from raw audio to a polished, formatted document."
+    },
+    {
+      "icon": "Globe",
+      "title": "Powered by an Advanced Indian LLM",
+      "description": "Built specifically for Marathi, Hindi, and other Indic languages. Not a generic model."
+    },
+    {
+      "icon": "Radio",
+      "title": "Live or Recorded Audio",
+      "description": "Speak in real time or upload audio — your choice. Supports up to 30-minute recordings."
+    },
+    {
+      "icon": "MessageSquareText",
+      "title": "Voice-Controlled Formatting",
+      "description": "Say \"new line\", \"bold on\", \"new page\" — and structure your document as you speak."
+    },
+    {
+      "icon": "Languages",
+      "title": "One-Click Indian Language Translation",
+      "description": "Instantly convert your content across multiple Indian languages with Sarvam AI Translate."
+    },
+    {
+      "icon": "ShieldCheck",
+      "title": "Private. Secure. Sovereign.",
+      "description": "All data encrypted and stored in Mumbai, India. Download outputs directly to your device."
+    }
+  ],
+  "video": {
+    "url": null,
+    "title": "See IndoScribe in Action",
+    "description": "Watch how professionals use IndoScribe to transcribe, edit, and export Indic language audio in minutes."
+  },
+  "testimonials": [
+    {
+      "quote": "IndoScribe has transformed how I document my research. The Marathi transcription accuracy is remarkable — far better than anything I've tried before.",
+      "author": "Dr. Priya Kulkarni",
+      "role": "Research Scholar, Pune University",
+      "initials": "PK"
+    },
+    {
+      "quote": "I use it daily for legal dictation in Hindi. The voice formatting commands alone save me two hours every day.",
+      "author": "Adv. Suresh Patil",
+      "role": "Senior Advocate, Bombay High Court",
+      "initials": "SP"
+    },
+    {
+      "quote": "Finally a transcription tool that understands Marathi the way we actually speak it. The DOCX export is publication-ready.",
+      "author": "Rahul Mehta",
+      "role": "Senior Journalist, Mumbai",
+      "initials": "RM"
+    }
+  ]
+}

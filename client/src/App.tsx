@@ -1,10 +1,11 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import Landing from "@/pages/Landing";
+import LandingMarketing from "@/pages/LandingMarketing";
+import LoginPage from "@/pages/LoginPage";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import NewProject from "@/pages/NewProject";
@@ -15,6 +16,8 @@ import NotFound from "@/pages/not-found";
 import Footer from "@/components/Footer";
 import { Loader2 } from "lucide-react";
 
+const NO_FOOTER_ROUTES = ["/", "/login"];
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -24,7 +27,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
       </div>
     );
   }
-  if (!user) return <Redirect to="/" />;
+  if (!user) return <Redirect to="/login" />;
   return <Component />;
 }
 
@@ -37,7 +40,7 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
       </div>
     );
   }
-  if (!user) return <Redirect to="/" />;
+  if (!user) return <Redirect to="/login" />;
   if (user.role !== "admin") return <Redirect to="/dashboard" />;
   return <Component />;
 }
@@ -61,7 +64,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/">
-        {() => <PublicRoute component={Landing} />}
+        {() => <PublicRoute component={LandingMarketing} />}
+      </Route>
+      <Route path="/login">
+        {() => <PublicRoute component={LoginPage} />}
       </Route>
       <Route path="/register">
         {() => <Register />}
@@ -89,18 +95,26 @@ function Router() {
   );
 }
 
+function AppShell() {
+  const [location] = useLocation();
+  const showFooter = !NO_FOOTER_ROUTES.includes(location);
+  return (
+    <div className="flex flex-col min-h-screen">
+      <div className="flex-1">
+        <Router />
+      </div>
+      {showFooter && <Footer />}
+    </div>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <div className="flex flex-col min-h-screen">
-            <div className="flex-1">
-              <Router />
-            </div>
-            <Footer />
-          </div>
+          <AppShell />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
