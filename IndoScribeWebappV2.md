@@ -322,3 +322,143 @@ doc.y = topMargin;    // ← added
 **Font strategy:** Noto Sans fonts are stored in `server/fonts/` (not committed to git for size reasons). The `languages.font_file` column maps each language to its font. PDFKit registers the font by path; DOCX uses the font's PostScript name.
 
 **Session cookies:** Sessions persist in DB via `connect-pg-simple`. `Cache-Control: no-store` is set on all auth endpoints to prevent stale plan feature responses.
+
+---
+
+### 9. Document Translation Feature
+
+**Status:** Complete
+
+**Summary:**
+Added a full document translation workflow. Users upload a `.txt` or `.docx` file, select source and target languages, and receive a translated version. The feature is plan-gated (`document_translation` feature key) and integrated into the Dashboard as a second tab.
+
+**New database table (`shared/schema.ts`):**
+- `document_translations` — columns: `id`, `userId`, `filename`, `fileType` (`txt`|`docx`), `originalText`, `translatedText`, `sourceLanguageCode`, `targetLanguageCode`, `wordCount`, `status`, `createdAt`
+- Insert/select schemas generated via `drizzle-zod`
+
+**Backend (`server/storage.ts`):**
+- 5 new methods added to `IStorage`: `createDocumentTranslation`, `getDocumentTranslation`, `getDocumentTranslationsByUser`, `updateDocumentTranslation`, `deleteDocumentTranslation`
+
+**Backend routes (`server/routes.ts`):**
+- `POST /api/document-translations` — accepts multipart upload (`.txt`/`.docx`, max 5 MB), extracts text (txt: direct read; docx: `mammoth` library), calls Sarvam AI translate API, stores result. Guarded by `document_translation` feature.
+- `GET /api/document-translations` — returns all translations for the authenticated user
+- `GET /api/document-translations/:id` — returns single record
+- `DELETE /api/document-translations/:id` — deletes record (owner-only)
+- `GET /api/document-translations/:id/download?field=original|translated` — server-side download endpoint (kept but superseded by client-side generation; see Section 10)
+
+**New dependency:** `mammoth` (server-side `.docx` → plain text extraction)
+
+**Plan feature assignment:**
+- `document_translation` key added to `PLAN_FEATURES` constant in `AdminDashboard.tsx`
+- Added directly to Basic (id=2) and Professional (id=3) plan features in DB via SQL
+
+**Frontend (`client/src/pages/TranslateDocument.tsx`):**
+- Full page component with drag-and-drop file upload zone
+- Language pair selectors (Source / Target) populated from `/api/languages`
+- Side-by-side original and translated text panels
+- Recent Translations history sidebar (last 10 records)
+- Download buttons for original and translated files (see Section 10)
+- Word count display, status badges, error handling
+- Premium badge shown; feature-gated redirect if plan lacks `document_translation`
+
+---
+
+### 10. Dashboard Redesign — Two-Tab Layout
+
+**Status:** Complete
+
+**Summary:**
+The Dashboard was redesigned to surface both Transcription and Translation workflows from a single page, replacing the separate "Translate Doc" navigation button.
+
+**Changes (`client/src/pages/Dashboard.tsx`):**
+- Replaced single projects list with two toggle-button tabs:
+  - **Transcription Projects** (orange active state) — existing project cards
+  - **Translation Projects** (purple active state) — document translation history cards
+- "New Transcription" button replaces the old "New Project" label
+- "Translate Doc" nav button removed from the top navigation bar
+- Translation tab shows cards with filename, language pair, date, word count, status, and a link to open the TranslateDocument page
+- Active tab persists in component state
+
+---
+
+### 11. Client-Side Document Download
+
+**Status:** Complete
+
+**Summary:**
+Document translation downloads (original and translated files) are generated entirely in the browser — no server round-trip. This avoids a browser-navigation issue where visiting `/api/...` URLs triggered the Wouter SPA router and showed a 404 page instead of downloading the file.
+
+**Root cause of original bug:**
+The Replit pike proxy serves the React SPA for all routes. Navigating the browser to `/api/document-translations/:id/download` caused Wouter to handle the URL and render its 404 page, even though the Express handler returned 200. A `fetch` + blob approach also triggered Vite HMR reload confusion.
+
+**Fix (`client/src/pages/TranslateDocument.tsx`):**
+- Replaced `downloadFromServer()` with two client-side functions:
+  - `triggerBlobDownload(blob, filename)` — creates an object URL, clicks a hidden `<a>`, then revokes the URL after 1 second
+  - `downloadFile(dt, field)` — builds the file in memory:
+    - `.txt`: wraps the text string in a `Blob` with `text/plain;charset=utf-8`
+    - `.docx`: uses the `docx` npm package (`Document`, `Paragraph`, `TextRun`, `Packer`) to build a Word document in-browser, then calls `Packer.toBlob(doc)` — the browser-safe API (vs `Packer.toBuffer()` which is Node.js only)
+- Filename pattern: `translated-<basename>.<ext>` / `original-<basename>.<ext>`
+
+**Key fix detail:** `Packer.toBuffer()` fails silently in the browser (throws internally); `Packer.toBlob()` is the correct browser API and returns a `Promise<Blob>` directly.
+
+---
+
+### 12. Privacy Policy & EULA on Registration
+
+**Status:** Complete
+
+**Summary:**
+The registration form consent checkbox now links to the full Privacy Policy & EULA document displayed in a scrollable in-app modal. Users can click "I Accept" in the modal to automatically tick the consent checkbox.
+
+**Files:**
+- `client/public/privacy-policy.pdf` — Privacy Policy + EULA document (IndoScribe v1.0, effective May 3 2026, by Zapurzaa Systems Pvt. Ltd.) copied from `attached_assets/` to the public folder so it is served statically by Express/Vite
+- `client/src/pages/Register.tsx` — updated:
+  - Added `showPolicy` state
+  - Consent label text changed to "I have read and agree to the **Privacy Policy & EULA**…" where the bold text is a `<button>` that sets `showPolicy(true)`
+  - Added `Dialog` (shadcn) with:
+    - Header: "Privacy Policy & End-User License Agreement"
+    - Body: full-height `<iframe src="/privacy-policy.pdf" />` — browser's native PDF viewer
+    - Footer: explanatory note + **"I Accept"** button that sets `consentAccepted(true)` and closes the dialog
+
+**Document content:**
+- Section 1–12: Privacy Policy (data collection, GDPR basis, data sharing, retention, security, user rights, children's privacy)
+- EULA: license grant, permitted use, restrictions, IP, data responsibility, termination, disclaimers, limitation of liability, indemnification, governing law (Maharashtra, India)
+
+---
+
+### 13. About Modal
+
+**Status:** Complete
+
+**Summary:**
+Added an "About IndoScribe" modal accessible from the footer on all authenticated pages. All content is driven by a single JSON config file — no code change needed to update app details.
+
+**New file: `client/src/config/about.json`**
+```json
+{
+  "appName": "IndoScribe",
+  "tagline": "Professional Audio Transcription & Translation for Indian Languages",
+  "version": "0.1.0",
+  "releaseDate": "2026-05-03",
+  "stage": "Beta",
+  "company": { "name": "Zapurzaa Systems Pvt. Ltd.", "url": "https://www.zapurzaasystems.com", "country": "India" },
+  "support": { "email": "operations@zapurzaasystems.com", "hours": "Mon–Fri, 10am–6pm IST" },
+  "legal": { "copyrightYear": "2026", "privacyPolicyUrl": "/privacy-policy.pdf" },
+  "platform": "Web"
+}
+```
+
+**Updated: `client/src/components/Footer.tsx`**
+- Footer now shows: `© 2026, Zapurzaa Systems · About`
+- Clicking **About** opens a `Dialog` with:
+  - App name + Beta badge
+  - Tagline
+  - Rows: Version, Release Date, Platform
+  - Clickable Company link (opens zapurzaasystems.com in new tab)
+  - Clickable Support email (`mailto:`)
+  - Support Hours
+  - Privacy & EULA link (opens `/privacy-policy.pdf` in new tab)
+  - Close button
+- Footer is shown on all routes except `/` (landing) and `/login`
+
+**To update app info:** edit `client/src/config/about.json` only — no component changes required.
