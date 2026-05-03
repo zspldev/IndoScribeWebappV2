@@ -1,5 +1,5 @@
-import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText, type LanguageGroup, type LanguageGroupWithLanguages, type Announcement } from "@shared/schema";
-import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText, languageGroups, languageGroupLanguages, announcements, announcementDismissals } from "@shared/schema";
+import { type User, type Project, type Language, type Transcription, type ProviderConfig, type UsageLogEntry, type Plan, type TranslationText, type LanguageGroup, type LanguageGroupWithLanguages, type Announcement, type DocumentTranslation } from "@shared/schema";
+import { users, projects, languages, transcriptions, providerConfig, usageLog, systemSettings, plans, translationsText, languageGroups, languageGroupLanguages, announcements, announcementDismissals, documentTranslations } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, or, isNull, gt } from "drizzle-orm";
 
@@ -65,6 +65,12 @@ export interface IStorage {
   createAnnouncement(data: Partial<Announcement>): Promise<Announcement>;
   updateAnnouncement(id: number, updates: Partial<Announcement>): Promise<Announcement | undefined>;
   deleteAnnouncement(id: number): Promise<boolean>;
+
+  createDocumentTranslation(data: Partial<DocumentTranslation>): Promise<DocumentTranslation>;
+  getDocumentTranslationsByUser(userId: number): Promise<DocumentTranslation[]>;
+  getDocumentTranslationById(id: number): Promise<DocumentTranslation | undefined>;
+  updateDocumentTranslation(id: number, updates: Partial<DocumentTranslation>): Promise<DocumentTranslation | undefined>;
+  deleteDocumentTranslation(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -378,6 +384,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAnnouncement(id: number): Promise<boolean> {
     const result = await db.delete(announcements).where(eq(announcements.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async createDocumentTranslation(data: Partial<DocumentTranslation>): Promise<DocumentTranslation> {
+    const [row] = await db.insert(documentTranslations).values(data as any).returning();
+    return row;
+  }
+
+  async getDocumentTranslationsByUser(userId: number): Promise<DocumentTranslation[]> {
+    return db.select().from(documentTranslations)
+      .where(eq(documentTranslations.userId, userId))
+      .orderBy(desc(documentTranslations.createdAt));
+  }
+
+  async getDocumentTranslationById(id: number): Promise<DocumentTranslation | undefined> {
+    const [row] = await db.select().from(documentTranslations).where(eq(documentTranslations.id, id));
+    return row;
+  }
+
+  async updateDocumentTranslation(id: number, updates: Partial<DocumentTranslation>): Promise<DocumentTranslation | undefined> {
+    const [row] = await db.update(documentTranslations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(documentTranslations.id, id))
+      .returning();
+    return row;
+  }
+
+  async deleteDocumentTranslation(id: number): Promise<boolean> {
+    const result = await db.delete(documentTranslations).where(eq(documentTranslations.id, id)).returning();
     return result.length > 0;
   }
 }

@@ -270,3 +270,25 @@ export type UsageLogEntry = typeof usageLog.$inferSelect;
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
 export type AnnouncementDismissal = typeof announcementDismissals.$inferSelect;
+
+export const documentTranslations = pgTable("document_translations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  fileType: varchar("file_type", { length: 10 }).notNull(),
+  sourceLanguageCode: varchar("source_language_code", { length: 10 }).notNull(),
+  targetLanguageCode: varchar("target_language_code", { length: 10 }).notNull(),
+  originalText: text("original_text").notNull(),
+  translatedText: text("translated_text"),
+  wordCount: integer("word_count"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertDocumentTranslationSchema = createInsertSchema(documentTranslations).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type InsertDocumentTranslation = z.infer<typeof insertDocumentTranslationSchema>;
+export type DocumentTranslation = typeof documentTranslations.$inferSelect;

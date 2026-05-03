@@ -1759,6 +1759,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── DOCUMENT TRANSLATION ─────────────────────────────────────────────────────
+  const docUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = file.originalname.split(".").pop()?.toLowerCase();
+      if (ext === "txt" || ext === "docx") cb(null, true);
+      else cb(new Error("Only .txt and .docx files are accepted"));
+    },
+  });
+
+  app.get("/api/document-translations", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const rows = await storage.getDocumentTranslationsByUser(userId);
+      res.json(rows);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch document translations" });
+    }
+  });
+
+  app.post("/api/document-translations", requireAuth, docUpload.single("file"), async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+
+      const currentUserDT = await storage.getUserById(userId);
+      if (currentUserDT?.role !== "admin" && !(await userHasFeature(userId, "document_translation"))) {
+        return res.status(403).json({ error: "Document translation is a Pro feature. Please upgrade your plan to access it." });
+      }
+
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+      if (!isSarvamTranslateConfigured()) return res.status(503).json({ error: "Translation service is not configured" });
+
+      const { sourceLanguageCode, targetLanguageCode } = req.body;
+      const validLangs = ["en-IN", "hi-IN", "mr-IN"];
+      if (!validLangs.includes(sourceLanguageCode) || !validLangs.includes(targetLanguageCode)) {
+        return res.status(400).json({ error: "Invalid language selection" });
+      }
+      if (sourceLanguageCode === targetLanguageCode) {
+        return res.status(400).json({ error: "Source and target languages must differ" });
+      }
+
+      const ext = req.file.originalname.split(".").pop()?.toLowerCase() ?? "txt";
+
+      // TXT hard limit
+      if (ext === "txt" && req.file.buffer.length > 500 * 1024) {
+        return res.status(400).json({ error: "TXT files must be under 500 KB" });
+      }
+
+      // Extract text
+      let originalText = "";
+      if (ext === "txt") {
+        originalText = req.file.buffer.toString("utf-8");
+      } else if (ext === "docx") {
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+        originalText = result.value;
+      }
+
+      if (!originalText.trim()) {
+        return res.status(400).json({ error: "The file appears to be empty or contains no readable text" });
+      }
+
+      const wordCount = originalText.trim().split(/\s+/).filter(Boolean).length;
+      if (wordCount > 20000) {
+        return res.status(400).json({ error: `Document is too large (${wordCount.toLocaleString()} words). Maximum is 20,000 words per submission.` });
+      }
+
+      // Create pending record
+      const record = await storage.createDocumentTranslation({
+        userId,
+        filename: req.file.originalname,
+        fileType: ext,
+        sourceLanguageCode,
+        targetLanguageCode,
+        originalText,
+        wordCount,
+        status: "translating",
+      });
+
+      // Translate
+      const translatedText = await translateText(originalText, sourceLanguageCode, targetLanguageCode);
+
+      const updated = await storage.updateDocumentTranslation(record.id, {
+        translatedText,
+        status: "done",
+      });
+
+      await storage.logUsage({
+        userId,
+        action: "document_translation",
+        provider: "sarvam",
+        characterCount: originalText.length,
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Document translation error:", error);
+      res.status(500).json({ error: error.message || "Translation failed" });
+    }
+  });
+
+  app.get("/api/document-translations/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const row = await storage.getDocumentTranslationById(parseInt(req.params.id));
+      if (!row) return res.status(404).json({ error: "Not found" });
+      if (row.userId !== userId) return res.status(403).json({ error: "Access denied" });
+      res.json(row);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch record" });
+    }
+  });
+
+  app.delete("/api/document-translations/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const row = await storage.getDocumentTranslationById(parseInt(req.params.id));
+      if (!row) return res.status(404).json({ error: "Not found" });
+      if (row.userId !== userId) return res.status(403).json({ error: "Access denied" });
+      await storage.deleteDocumentTranslation(row.id);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to delete record" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

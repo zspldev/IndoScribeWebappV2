@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, FileText, Clock, FolderOpen, LogOut, Loader2, AlertTriangle, Mail, CalendarClock, X } from "lucide-react";
+import { Plus, FileText, Clock, FolderOpen, LogOut, Loader2, AlertTriangle, Mail, CalendarClock, X, Languages } from "lucide-react";
 import { useLanguages } from "@/lib/useLanguages";
 import AppLogo from "@/components/AppLogo";
 import HowItWorks from "@/components/HowItWorks";
@@ -128,6 +128,16 @@ export default function Dashboard() {
         </div>
         <div className="flex-1" />
         <HowItWorks />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setLocation("/translate-document")}
+          className="gap-1.5 text-muted-foreground hover:text-foreground"
+          data-testid="button-translate-document"
+        >
+          <Languages className="h-4 w-4" />
+          <span className="hidden sm:inline">Translate Doc</span>
+        </Button>
         {user.role === "admin" && (
           <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-admin">
             Admin

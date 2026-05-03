@@ -32,7 +32,7 @@ The backend is an Express.js REST API developed with TypeScript, utilizing sessi
 The application uses Replit's built-in PostgreSQL database, managed with Drizzle ORM. Audio files are stored in AWS S3 if configured (`AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`), otherwise audio is stored as base64 in the database.
 
 **Database Tables:**
-`users`, `projects`, `languages`, `transcriptions`, `provider_config`, `formatting_commands_db`, `usage_log`, `system_settings`, `session`, `plans`, `translations_text`.
+`users`, `projects`, `languages`, `transcriptions`, `provider_config`, `formatting_commands_db`, `usage_log`, `system_settings`, `session`, `plans`, `translations_text`, `announcements`, `announcement_dismissals`, `document_translations`.
 
 **Database Connection:** Uses the `DATABASE_URL` environment variable (Replit PostgreSQL). Schema changes are applied via `npm run db:push` (Drizzle Kit).
 

@@ -12,6 +12,7 @@ import NewProject from "@/pages/NewProject";
 import ProjectEditor from "@/pages/ProjectEditor";
 import AdminDashboard from "@/pages/AdminDashboard";
 import SelectPlan from "@/pages/SelectPlan";
+import TranslateDocument from "@/pages/TranslateDocument";
 import NotFound from "@/pages/not-found";
 import Footer from "@/components/Footer";
 import { Loader2 } from "lucide-react";
@@ -86,6 +87,9 @@ function Router() {
       </Route>
       <Route path="/upgrade">
         {() => <ProtectedRoute component={SelectPlan} />}
+      </Route>
+      <Route path="/translate-document">
+        {() => <ProtectedRoute component={TranslateDocument} />}
       </Route>
       <Route path="/admin">
         {() => <AdminRoute component={AdminDashboard} />}
