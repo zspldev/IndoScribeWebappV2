@@ -50,7 +50,37 @@ The trial period is now **plan-driven** via the `days_limit` column in the `plan
 - ProjectEditor shows a trial expired banner and disables transcribe/translate buttons.
 
 ### Document Generation
-DOCX export functionality supports source-only, translation-only, or bilingual modes. It uses language-specific fonts (Noto Sans Devanagari for Devanagari, Calibri for Latin) and supports full Markdown formatting.
+DOCX and PDF export functionality supports source-only, translation-only, or bilingual modes. It uses language-specific fonts (Noto Sans Devanagari for Devanagari, Calibri for Latin) and supports full Markdown formatting.
+
+**Plan-based watermarking:**
+- Starter plan users receive watermarked exports (`docx_watermark` / `pdf_watermark` features on plan).
+- Basic plan and above receive clean exports (`docx_no_watermark` / `pdf_no_watermark`).
+
+**DOCX watermark implementation (`server/routes.ts` → `injectDocxDiagonalWatermark`):**
+- After the `docx` library generates the file, JSZip post-processes the raw `.docx` archive.
+- `word/header1.xml` is replaced with full VML XML: `<v:shape>` with `rotation:315`, `mso-position-horizontal:center`, `mso-position-vertical:center`.
+- The watermark text "Created by IndoScribe" appears diagonally centered on every page.
+
+**PDF watermark implementation (`server/services/PdfExportService.ts`):**
+- Uses pdfkit 0.18.0 to generate PDFs with optional diagonal watermarks.
+- Watermark is drawn via `doc.save()` → `translate(w/2, h/2)` → `rotate(-45)` → text at 20pt, `#999999`, 45% fill opacity → `doc.restore()`.
+- After `doc.restore()`, the text cursor is explicitly reset to `doc.x = leftMargin; doc.y = topMargin` because pdfkit's `restore()` restores the PDF graphics state but does NOT reset pdfkit's internal text cursor.
+- A `pageAdded` event listener calls `drawWatermark()` on every new page.
+
+**Fontkit GPOS null-anchor patch (`node_modules/fontkit/dist/main.cjs` line 9990):**
+- `NotoSansDevanagari-Regular.ttf` has GPOS table entries where some mark anchors are null records.
+- Fontkit's `GPOSProcessor.getAnchor()` crashed with `Cannot read properties of null ('xCoordinate')` when processing these.
+- Fixed with a one-line null guard: `if (!anchor) return { x: 0, y: 0 };` at the top of `getAnchor()`.
+- **Note:** This patch is applied directly to the bundled `node_modules/fontkit/dist/main.cjs` and will be lost if `npm install` is re-run. The fix must be reapplied manually after any clean install.
+
+### Navigation & UX
+- Dashboard and NewProject headers display the user's current plan name as a clickable link that navigates to `/upgrade` (plan upgrade page).
+- Admin users see the plan name as static text (non-clickable), since admins are not on a billable plan.
+
+### Plan Management
+- Plans table: id=1 Starter (30 min, 14-day trial, watermarked exports), id=2 Basic (600 min, no watermark), id=3 Professional (1500 min, no watermark).
+- `updateUserPlan` in `server/storage.ts` uses raw SQL to bypass a Drizzle ORM column-mapping bug with the `plans` table.
+- Plan features are stored as a `text[]` array in the `plans.features` column and checked at export time.
 
 ## External Dependencies
 
@@ -59,8 +89,22 @@ DOCX export functionality supports source-only, translation-only, or bilingual m
 - **Authentication**: `bcryptjs`, `connect-pg-simple`, `express-session`
 - **Speech Recognition**: Sarvam AI STT (primary, requires `SARVAM_API_KEY`), Google Speech-to-Text (optional fallback)
 - **Audio Processing**: `ffmpeg`, `fluent-ffmpeg`
-- **Document Generation**: `docx` library
+- **Document Generation**: `docx` library (DOCX), `pdfkit` + `fontkit` (PDF)
+- **Archive Processing**: `jszip` (used for DOCX watermark post-processing)
 - **UI Libraries**: `@radix-ui/*`, `lucide-react`, `shadcn/ui`
 - **Validation**: `Zod`, `@hookform/resolvers`
 - **AWS SDK**: `@aws-sdk/client-s3`, `@aws-sdk/lib-storage` (optional, for S3 audio storage)
 - **Translation**: Sarvam AI Translate API
+
+## Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `server/routes.ts` | API routes + `injectDocxDiagonalWatermark()` helper for DOCX VML watermarks |
+| `server/services/PdfExportService.ts` | PDF generation with diagonal watermark, cursor reset, fontkit dependency |
+| `server/storage.ts` | Data access layer; `updateUserPlan` uses raw SQL |
+| `node_modules/fontkit/dist/main.cjs` | Patched at line ~9990 with null guard in `getAnchor()` |
+| `client/src/pages/Dashboard.tsx` | Dashboard with plan name → `/upgrade` link |
+| `client/src/pages/NewProject.tsx` | New project page with plan name → `/upgrade` link |
+| `client/src/lib/auth.tsx` | Session management with sessionStorage session boundary detection |
+| `shared/schema.ts` | Drizzle ORM data model and Zod schemas |
