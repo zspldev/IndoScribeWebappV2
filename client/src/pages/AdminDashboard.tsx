@@ -312,6 +312,7 @@ const PLAN_FEATURES: { key: string; label: string; group: string }[] = [
   { key: "formatting_commands", label: "Formatting Commands (109)", group: "Editor" },
   { key: "rich_text_editor", label: "Rich Text Editor (TipTap)", group: "Editor" },
   { key: "translation", label: "Translation", group: "Editor" },
+  { key: "document_translation", label: "Document Translation (Pro+)", group: "Editor" },
   { key: "project_history", label: "Project History", group: "Editor" },
   { key: "docx_export", label: "DOCX Export (gate)", group: "Export" },
   { key: "docx_watermark", label: "DOCX with Watermark (Starter)", group: "Export" },
