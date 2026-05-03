@@ -462,3 +462,96 @@ Added an "About IndoScribe" modal accessible from the footer on all authenticate
 - Footer is shown on all routes except `/` (landing) and `/login`
 
 **To update app info:** edit `client/src/config/about.json` only — no component changes required.
+
+---
+
+### 14. Progressive Web App (PWA) Support
+
+**Status:** Complete
+
+**Summary:**
+The app is now installable as a PWA on Android and iOS. Users see an "Add to Home Screen" prompt on Android automatically; on iOS they use the Safari share menu. Once installed, the app opens full-screen with the IndoScribe icon and no browser chrome.
+
+**Note:** The service worker and manifest are only active in the production build — they are inactive in the Vite dev server.
+
+**Icons generated (`client/public/icons/`):**
+
+| File | Size | Usage |
+|---|---|---|
+| `icon-192.png` | 192×192 | Android home screen / Chrome |
+| `icon-512.png` | 512×512 | High-res / splash screen |
+| `apple-touch-icon.png` | 180×180 | iPhone / iPad home screen |
+
+Source: `client/src/assets/images/indoscribe-icon.png` (1024×1024 PNG), resized using ImageMagick.
+
+**`client/index.html` — added meta tags:**
+```html
+<meta name="theme-color" content="#FF9933" />
+<meta name="description" content="Professional audio transcription and translation for Indian languages." />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="IndoScribe" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+```
+
+**`vite.config.ts` — added `vite-plugin-pwa`:**
+- `registerType: "autoUpdate"` — service worker updates silently in background
+- Manifest: `display: "standalone"`, `orientation: "portrait"`, `theme_color: "#FF9933"`, `start_url: "/"`
+- Workbox config:
+  - Precaches all `.js`, `.css`, `.html`, `.png`, `.svg`, `.woff2` assets
+  - `navigateFallback: "/index.html"` for client-side routing
+  - `navigateFallbackDenylist: [/^\/api\//]` — API routes always hit the server live
+  - Runtime caching for Google Fonts (`CacheFirst`, 1-year expiry)
+- Build outputs: `dist/public/sw.js` + `dist/public/workbox-*.js` + `dist/public/manifest.webmanifest`
+
+**New dev dependency:** `vite-plugin-pwa`
+
+**Offline behaviour:** Core transcription and translation features require the Sarvam AI API and are not available offline. The app shell (navigation, UI) loads from cache; all `/api/*` calls go to the live server.
+
+---
+
+### 15. Deployment Fixes
+
+**Status:** Complete
+
+**Two separate issues were identified and fixed before a successful production deployment.**
+
+---
+
+#### 15a. Wrong Output Filename in Deployment Run Command
+
+**Problem:** The `.replit` `[deployment]` section was configured to run `node ./dist/index.cjs`, but the esbuild step in the `build` script outputs `dist/index.js` (`--format=esm`). Deployment crashed immediately with:
+```
+Error: Cannot find module '/home/runner/workspace/dist/index.cjs'
+```
+
+**Fix:** Updated the deployment run command to `node ./dist/index.js` via `deployConfig()`.
+
+---
+
+#### 15b. Vite Dev Server Running in Production
+
+**Problem:** After fixing the filename, the deployed app returned 500 Internal Server Error. Production logs showed:
+```
+Re-optimizing dependencies because vite config has changed
+Pre-transform error: Failed to load url /src/main.tsx — Does the file exist?
+```
+
+**Root cause:** `server/index.ts` checks `app.get("env") === "development"` to decide whether to run the Vite dev middleware or serve the built static files. Express's `app.get("env")` defaults to `process.env.NODE_ENV || "development"`. The deployment run command did not set `NODE_ENV`, so the server started in development mode — launching the Vite middleware instead of `serveStatic()`. The Vite middleware then failed because `client/src/main.tsx` doesn't exist in the production container.
+
+**Fix:** Changed the deployment run command to explicitly set the environment variable:
+```
+bash -c "NODE_ENV=production node ./dist/index.js"
+```
+
+**Current deployment config (`.replit`):**
+```toml
+[deployment]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
+run = ["bash", "-c", "NODE_ENV=production node ./dist/index.js"]
+```
+
+**Production URL:** `https://indoscribe.replit.app`
