@@ -65,11 +65,11 @@ export default function LandingMarketing() {
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 flex items-center px-6 gap-4 py-2">
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-center">
           <AppLogo className="text-xl" />
           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[10px] text-gray-400 leading-none">Created by</span>
-            <img src={zsplLogo} alt="Zapurzaa Systems" className="h-3" />
+            <img src={zsplLogo} alt="Zapurzaa Systems" className="h-5" />
           </div>
         </div>
         <div className="flex-1" />
