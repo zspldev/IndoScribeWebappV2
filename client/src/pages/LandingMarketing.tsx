@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AppLogo from "@/components/AppLogo";
-import zapurzaaLogo from "@/assets/images/Zapurzaa-Logo.png";
+import zsplLogo from "@assets/ZSPL-Logo-Symbol-Name-NoBG_1770545314669.png";
 import {
   Mic, Globe, Radio, MessageSquareText, Languages, ShieldCheck,
   Play, Check, Clock, Zap, ArrowRight, Star, ChevronRight,
@@ -64,12 +64,18 @@ export default function LandingMarketing() {
     <div className="bg-white" data-testid="page-landing-marketing">
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0f0728]/95 backdrop-blur-md border-b border-white/10 flex items-center px-6 gap-4">
-        <AppLogo className="text-xl" />
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 flex items-center px-6 gap-4 py-2">
+        <div className="flex flex-col items-start">
+          <AppLogo className="text-xl" />
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="text-[10px] text-gray-400 leading-none">Created by</span>
+            <img src={zsplLogo} alt="Zapurzaa Systems" className="h-3" />
+          </div>
+        </div>
         <div className="flex-1" />
         <button
           onClick={() => setLocation("/login")}
-          className="text-sm text-white/70 hover:text-white transition-colors mr-2"
+          className="text-sm text-gray-500 hover:text-gray-900 transition-colors mr-2"
           data-testid="link-sign-in-nav"
         >
           Sign In
@@ -158,11 +164,6 @@ export default function LandingMarketing() {
             <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-[#FF9933]" /> Data stored in India</span>
           </div>
 
-          {/* Zapurzaa attribution */}
-          <div className="mt-10 flex flex-col items-center gap-1.5 opacity-40">
-            <span className="text-white text-xs">Created by</span>
-            <img src={zapurzaaLogo} alt="Zapurzaa Systems" className="h-5 brightness-0 invert" />
-          </div>
         </div>
 
         {/* Bottom fade */}
@@ -428,12 +429,12 @@ export default function LandingMarketing() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────────── */}
-      <footer className="bg-[#0a0520] border-t border-white/10 py-6 px-6" data-testid="footer-marketing">
+      <footer className="bg-white border-t border-gray-200 py-6 px-6" data-testid="footer-marketing">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <AppLogo className="text-lg" />
-          <p className="text-white/30 text-xs">© 2026 Zapurzaa Systems. All rights reserved.</p>
+          <p className="text-gray-400 text-xs">© 2026 Zapurzaa Systems. All rights reserved.</p>
           <div className="flex items-center gap-1.5">
-            <img src={zapurzaaLogo} alt="Zapurzaa Systems" className="h-4 brightness-0 invert opacity-30" />
+            <img src={zsplLogo} alt="Zapurzaa Systems" className="h-5" />
           </div>
         </div>
       </footer>
