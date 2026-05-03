@@ -159,10 +159,7 @@ export default function TranslateDocument() {
           line => new Paragraph({ children: [new TextRun({ text: line, size: 24 })] })
         );
         const doc = new Document({ sections: [{ children: paragraphs }] });
-        const buffer = await Packer.toBuffer(doc);
-        const blob = new Blob([buffer], {
-          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        });
+        const blob = await Packer.toBlob(doc);
         triggerBlobDownload(blob, filename);
       } catch {
         toast({ title: "Download failed", description: "Could not generate DOCX. Please try again.", variant: "destructive" });
